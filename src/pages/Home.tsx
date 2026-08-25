@@ -1,129 +1,155 @@
 import { Link } from 'react-router'
-import { ArrowRight, BookOpen, Compass, FileStack, FunctionSquare, Users } from 'lucide-react'
+import { ArrowRight, BookOpen, Compass, FileStack, FunctionSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import WebGLBlackHole from '@/components/WebGLBlackHole'
-import { store } from '@/lib/store'
+import MathManifold from '@/components/MathManifold'
 
-const FEATURES = [
-  { icon: BookOpen, title: '高质量题库', desc: '按章节、难度、竞赛类型浏览与搜索，题题精挑细选。', to: '/problems' },
-  { icon: FileStack, title: '整套试卷', desc: '完整试卷与套题，Markdown + LaTeX 排版，附原版 PDF。', to: '/papers' },
-  { icon: Users, title: '社区解法', desc: '任何人都可以贡献解法，多种格式完整支持。', to: '/problems' },
-  { icon: Compass, title: '第一性原理', desc: '每个公式和定理都有迹可循，从定义出发完整推导。', to: '/principles' },
-  { icon: FunctionSquare, title: '交互可视化', desc: '函数图像实时参数控制，直观理解抽象概念。', to: '/viz' },
+const CAPABILITIES = [
+  { title: '严谨推导', desc: '定义、定理与证明', to: '/principles' },
+  { title: '多解比较', desc: '同题不同思想', to: '/problems' },
+  { title: '动态实验', desc: '让抽象结构可以被操纵', to: '/viz' },
+  { title: '系统训练', desc: '题目、试卷与知识链', to: '/papers' },
+]
+
+const LEARNING_PATH = ['遇见问题', '找到知识缺口', '回到第一性原理', '动态观察', '重新解题', '变式检验']
+
+const COLLECTIONS = [
+  {
+    icon: BookOpen,
+    title: '从一道好题开始',
+    desc: '题目不止通向答案，也通向它所依赖的定义、思想与证明。',
+    label: '探索题库',
+    to: '/problems',
+  },
+  {
+    icon: Compass,
+    title: '追问为什么成立',
+    desc: '找到问题的起点，看见被省略的条件，沿着推导回到结论。',
+    label: '阅读第一性原理',
+    to: '/principles',
+  },
+  {
+    icon: FunctionSquare,
+    title: '把抽象放进实验',
+    desc: '拖动参数、观察变化，让极限、线性变换和收敛过程变得可见。',
+    label: '进入概念实验室',
+    to: '/viz',
+  },
+  {
+    icon: FileStack,
+    title: '让理解经得起检验',
+    desc: '通过试卷、变式和完整解答，确认掌握的究竟是答案还是方法。',
+    label: '开始系统训练',
+    to: '/papers',
+  },
 ]
 
 export default function Home() {
-  const pCount = store.problems().length
-  const sCount = store.solutions().length
-  const aCount = store.articles().length
-  const paperCount = store.papers().length
-
   return (
     <div>
-      <section className="home-hero relative isolate flex items-center overflow-hidden">
-        <WebGLBlackHole className="home-hero-canvas pointer-events-none absolute inset-0 h-full w-full" />
-        <div className="home-hero-overlay pointer-events-none absolute inset-0" aria-hidden="true" />
+      <section className="home-hero relative isolate overflow-hidden" aria-labelledby="home-hero-title">
+        <MathManifold className="home-manifold pointer-events-none absolute" />
 
-        <div className="relative z-10 mx-auto w-full max-w-5xl px-5 py-24 sm:px-8 sm:py-32">
-          <div className="max-w-[40rem]">
-            <p className="home-eyebrow text-[11px] font-medium uppercase tracking-[0.3em] text-indigo-200/85">
+        <div className="home-hero-inner relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-5 sm:px-8 lg:px-10">
+          <div className="home-copy">
+            <p className="home-eyebrow text-[12px] font-medium tracking-[0.22em] text-[#c7ad70]">
               为每一个追问本质的人
             </p>
-            <h1 className="home-hero-title mt-7 whitespace-nowrap font-semibold leading-[1.14] text-[#ededf1]">
+            <h1 id="home-hero-title" className="home-hero-title mt-8 font-semibold leading-[1.13] text-[#f0e8d3]">
               数学，从这里开始
             </h1>
-            <p className="mt-7 max-w-[30rem] text-[15px] leading-8 text-neutral-300/90 sm:text-base">
+            <p className="mt-7 max-w-[30rem] text-[15px] leading-[2.05] text-[#b6b3a9] sm:text-[16px]">
               从一道题，到一条完整的推导。
               <br />
               让公式回到直觉，让理解先于记忆。
             </p>
 
-            <div className="mt-11 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" className="h-12 rounded-md bg-[#ededf1] px-6 text-[#0b0b10] hover:bg-[#dcdce5]">
+            <div className="mt-10 flex flex-wrap items-center gap-3 sm:mt-11 sm:gap-4">
+              <Button asChild size="lg" className="home-primary-cta h-12 rounded-[5px] px-6 text-[14px] font-medium">
                 <Link to="/problems">
-                  进入题库 <ArrowRight className="ml-2 h-4 w-4" />
+                  开始探索 <ArrowRight className="home-cta-arrow ml-1.5 h-[16px] w-[16px]" />
                 </Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
                 size="lg"
-                className="h-12 rounded-md border-white/[0.13] bg-white/[0.035] px-5 text-neutral-200 hover:border-white/25 hover:bg-white/[0.07]"
+                className="home-secondary-cta h-12 rounded-[5px] px-5 text-[14px] font-normal"
               >
-                <Link to="/principles">读一篇推导</Link>
+                <Link to="/principles">阅读第一篇推导</Link>
               </Button>
             </div>
-
-            <dl className="home-hero-stats mt-14 grid max-w-[32rem] grid-cols-2 gap-x-8 gap-y-6 border-t border-white/[0.09] pt-7 sm:grid-cols-4">
-              <div>
-                <dd className="text-xl font-medium tabular-nums tracking-tight text-neutral-100">{pCount}</dd>
-                <dt className="mt-1 text-xs tracking-wide text-neutral-400">精选题目</dt>
-              </div>
-              <div>
-                <dd className="text-xl font-medium tabular-nums tracking-tight text-neutral-100">{paperCount}</dd>
-                <dt className="mt-1 text-xs tracking-wide text-neutral-400">完整试卷</dt>
-              </div>
-              <div>
-                <dd className="text-xl font-medium tabular-nums tracking-tight text-neutral-100">{sCount}</dd>
-                <dt className="mt-1 text-xs tracking-wide text-neutral-400">思路解法</dt>
-              </div>
-              <div>
-                <dd className="text-xl font-medium tabular-nums tracking-tight text-neutral-100">{aCount}</dd>
-                <dt className="mt-1 text-xs tracking-wide text-neutral-400">原理推导</dt>
-              </div>
-            </dl>
           </div>
+
+          <nav className="home-capabilities grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-4 sm:gap-x-8" aria-label="MathForge 学习入口">
+            {CAPABILITIES.map((item) => (
+              <Link key={item.title} to={item.to} className="home-capability group block min-w-0">
+                <p className="text-[14px] font-medium tracking-[0.045em] text-[#e4dfd1] transition-colors group-hover:text-[#f0e8d3]">
+                  {item.title}
+                </p>
+                <p className="mt-2 text-[12px] leading-5 text-[#898a83]">{item.desc}</p>
+              </Link>
+            ))}
+          </nav>
         </div>
       </section>
 
-      <section className="pb-14 pt-20 sm:pb-20 sm:pt-28" aria-labelledby="home-features-title">
-        <div className="mb-9 flex flex-wrap items-end justify-between gap-5 sm:mb-11">
+      <section className="home-learning-section pb-12 pt-24 sm:pb-20 sm:pt-32" aria-labelledby="home-learning-title">
+        <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.27em] text-indigo-200/80">从问题出发</p>
-            <h2 id="home-features-title" className="mt-4 text-[1.65rem] font-medium tracking-tight text-neutral-100 sm:text-3xl">
-              把复杂，重新变得清晰。
+            <p className="home-section-kicker">从问题出发</p>
+            <h2 id="home-learning-title" className="mt-5 text-[1.8rem] font-medium tracking-[-0.045em] text-[#f0e8d3] sm:text-[2.25rem]">
+              理解，从来不是一条捷径。
             </h2>
           </div>
-          <p className="max-w-[19rem] text-sm leading-7 text-neutral-400">
-            不止知道答案，更知道它为什么成立。
+          <p className="max-w-[21rem] text-[14px] leading-7 text-[#898a83]">
+            从第一次困惑，到终于说清楚为什么。
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((feature, index) => (
-            <Link
-              key={feature.title}
-              to={feature.to}
-              className="home-feature glass group relative min-h-[190px] rounded-xl p-7 last:lg:col-span-2"
-            >
+        <ol className="home-learning-path mt-11 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-14 sm:grid-cols-3 lg:grid-cols-6">
+          {LEARNING_PATH.map((step, index) => (
+            <li key={step} className="home-path-step relative min-w-0">
+              <span className="font-mono text-[11px] tabular-nums tracking-[0.16em] text-[#a99058]">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <p className="mt-3 whitespace-nowrap text-[13px] text-[#d8d4c7]">{step}</p>
+            </li>
+          ))}
+        </ol>
+
+        <div className="home-collections mt-16 grid sm:mt-20 sm:grid-cols-2">
+          {COLLECTIONS.map((collection, index) => (
+            <Link key={collection.title} to={collection.to} className="home-collection group relative py-8 sm:py-10">
               <div className="flex items-center justify-between">
-                <feature.icon className="h-5 w-5 text-indigo-200/85" strokeWidth={1.6} />
-                <span className="text-[11px] tabular-nums tracking-[0.18em] text-neutral-500">
+                <collection.icon className="h-[19px] w-[19px] text-[#c7ad70]" strokeWidth={1.55} />
+                <span className="font-mono text-[10px] tabular-nums tracking-[0.15em] text-[#696a64]">
                   {String(index + 1).padStart(2, '0')}
                 </span>
               </div>
-              <h3 className="mt-8 text-[15px] font-medium tracking-wide text-neutral-100">{feature.title}</h3>
-              <p className="mt-2 max-w-[25rem] text-[13px] leading-6 text-neutral-400">{feature.desc}</p>
+              <h3 className="mt-7 text-[16px] font-medium tracking-[0.02em] text-[#e9e4d6]">
+                {collection.title}
+              </h3>
+              <p className="mt-3 max-w-[24rem] text-[13px] leading-7 text-[#96968d]">{collection.desc}</p>
+              <span className="mt-6 inline-flex items-center gap-2 text-[12px] text-[#baaa83]">
+                {collection.label} <ArrowRight className="home-cta-arrow h-[14px] w-[14px]" />
+              </span>
             </Link>
           ))}
         </div>
       </section>
 
-      <section className="home-manifesto glass overflow-hidden rounded-xl px-7 py-12 sm:px-12 sm:py-16">
+      <section className="home-manifesto relative overflow-hidden px-7 py-12 sm:px-12 sm:py-16">
         <div className="relative flex flex-wrap items-end justify-between gap-8">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.3em] text-indigo-200/80">Less, but better</p>
-            <p className="mt-5 max-w-[36rem] text-[17px] leading-8 text-neutral-200 sm:text-xl sm:leading-9">
+            <p className="home-section-kicker">认真理解的时间</p>
+            <p className="mt-6 max-w-[36rem] text-[17px] leading-8 text-[#d8d4c7] sm:text-[20px] sm:leading-9">
               没有信息流，没有打卡，也没有焦虑。
               <br />
-              只有题目、解法、推导，和认真理解的时间。
+              只有题目、推导，和真正弄懂一件事。
             </p>
           </div>
-          <Link
-            to="/principles"
-            className="inline-flex items-center gap-2 text-sm text-neutral-300 hover:text-neutral-100"
-          >
-            从第一性原理开始 <ArrowRight className="h-4 w-4" />
+          <Link to="/principles" className="group inline-flex items-center gap-2 text-[13px] text-[#baaa83] hover:text-[#f0e8d3]">
+            从第一性原理开始 <ArrowRight className="home-cta-arrow h-[15px] w-[15px]" />
           </Link>
         </div>
       </section>

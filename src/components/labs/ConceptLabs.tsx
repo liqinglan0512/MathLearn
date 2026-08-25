@@ -1,0 +1,700 @@
+import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import { Pause, Play, RotateCcw } from 'lucide-react'
+import { Markdown } from '@/components/Markdown'
+import type { LabId } from '@/lib/labs'
+import { LabCanvas } from '@/components/labs/LabCanvas'
+import {
+  LAB_COLORS,
+  drawArrow,
+  drawGrid,
+  drawPoint,
+  formatNumber,
+  plotCurve,
+} from '@/components/labs/canvasDrawing'
+import type { LabDraw } from '@/components/labs/canvasDrawing'
+
+const selectClassName =
+  'h-10 w-full rounded-md border border-white/[0.09] bg-[#171813] px-3 text-sm text-[#e7e2d4] outline-none transition-colors focus:border-[#c7ad70]/55'
+
+export function ConceptLab({ id }: { id: Exclude<LabId, 'plotter'> }) {
+  switch (id) {
+    case 'derivative':
+      return <DerivativeLab />
+    case 'integral':
+      return <IntegralLab />
+    case 'linear':
+      return <LinearLab />
+    case 'taylor':
+      return <TaylorLab />
+    case 'probability':
+      return <ProbabilityLab />
+    case 'ode':
+      return <DirectionFieldLab />
+  }
+}
+
+function DerivativeLab() {
+  const [functionId, setFunctionId] = useState<'sin' | 'square' | 'exp'>('sin')
+  const [position, setPosition] = useState(0.8)
+  const [increment, setIncrement] = useState(1.5)
+  const [playing, setPlaying] = useState(false)
+
+  useEffect(() => {
+    if (!playing) return
+    const timer = window.setInterval(() => {
+      setIncrement((value) => {
+        if (value <= 0.024) {
+          setPlaying(false)
+          return 0.02
+        }
+        return Math.max(0.02, value * 0.85)
+      })
+    }, 180)
+    return () => window.clearInterval(timer)
+  }, [playing])
+
+  const fn = (value: number) => {
+    if (functionId === 'square') return 0.42 * value ** 2
+    if (functionId === 'exp') return Math.exp(value * 0.55) - 1
+    return Math.sin(value)
+  }
+
+  const derivative = (value: number) => {
+    if (functionId === 'square') return 0.84 * value
+    if (functionId === 'exp') return 0.55 * Math.exp(value * 0.55)
+    return Math.cos(value)
+  }
+
+  const secant = (fn(position + increment) - fn(position)) / increment
+  const tangent = derivative(position)
+
+  const draw: LabDraw = (context, viewport) => {
+    drawGrid(context, viewport)
+    plotCurve(context, viewport, fn, LAB_COLORS.ivory, { lineWidth: 2.35 })
+    plotCurve(
+      context,
+      viewport,
+      (value) => fn(position) + tangent * (value - position),
+      LAB_COLORS.sage,
+      { dashed: true, lineWidth: 1.7 },
+    )
+    plotCurve(
+      context,
+      viewport,
+      (value) => fn(position) + secant * (value - position),
+      LAB_COLORS.gold,
+      { lineWidth: 1.9 },
+    )
+
+    context.strokeStyle = 'rgba(209, 183, 125, 0.46)'
+    context.setLineDash([4, 5])
+    context.beginPath()
+    context.moveTo(viewport.x(position), viewport.y(fn(position)))
+    context.lineTo(viewport.x(position + increment), viewport.y(fn(position)))
+    context.lineTo(viewport.x(position + increment), viewport.y(fn(position + increment)))
+    context.stroke()
+    context.setLineDash([])
+
+    drawPoint(context, viewport, position, fn(position), LAB_COLORS.ivory, 5)
+    drawPoint(context, viewport, position + increment, fn(position + increment), LAB_COLORS.gold, 5)
+
+    context.fillStyle = LAB_COLORS.gold
+    context.font = '12px ui-monospace, SFMono-Regular, monospace'
+    context.textAlign = 'center'
+    context.fillText('h', viewport.x(position + increment / 2), viewport.y(fn(position)) + 18)
+  }
+
+  const expression = functionId === 'square' ? '0.42x²' : functionId === 'exp' ? 'e^(0.55x) − 1' : 'sin x'
+
+  return (
+    <ExperimentLayout
+      canvas={
+        <LabCanvas
+          label="导数实验：函数曲线、割线与切线"
+          draw={draw}
+          xRange={[-4, 4]}
+          yRange={[-2.8, 4.7]}
+        />
+      }
+      legend={[
+        [LAB_COLORS.ivory, '原函数'],
+        [LAB_COLORS.gold, '割线'],
+        [LAB_COLORS.sage, '切线'],
+      ]}
+      formula={String.raw`$$\frac{f(x_0+h)-f(x_0)}{h}\xrightarrow[h\to0]{}f'(x_0).$$`}
+      observation="导数不是凭空出现的一条切线，而是两点平均变化率在同一点附近的极限。"
+    >
+      <ControlHeading label="实验参数" />
+      <label className="block space-y-2 text-sm text-[#c9c5b9]">
+        <span>选择函数</span>
+        <select
+          aria-label="导数实验函数"
+          value={functionId}
+          onChange={(event) => setFunctionId(event.target.value as typeof functionId)}
+          className={selectClassName}
+        >
+          <option value="sin">f(x) = sin x</option>
+          <option value="square">f(x) = 0.42x²</option>
+          <option value="exp">f(x) = e^(0.55x) − 1</option>
+        </select>
+      </label>
+      <ParameterControl label="观察点 x₀" value={position} min={-2} max={2} step={0.05} onChange={setPosition} reset={0.8} />
+      <ParameterControl label="增量 h" value={increment} min={0.02} max={2.6} step={0.01} onChange={setIncrement} reset={1.5} />
+      <button
+        type="button"
+        aria-label={playing ? '暂停割线趋近切线' : '播放割线趋近切线'}
+        onClick={() => {
+          if (!playing && increment <= 0.025) setIncrement(1.5)
+          setPlaying((value) => !value)
+        }}
+        className="inline-flex items-center gap-2 text-sm text-[#d4bd88] transition-colors hover:text-[#efe4cb]"
+      >
+        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        {playing ? '暂停逼近' : '自动让 h → 0'}
+      </button>
+      <Readout label="当前函数" value={expression} />
+      <Readout label="割线斜率" value={formatNumber(secant, 5)} />
+      <Readout label="切线斜率 f′(x₀)" value={formatNumber(tangent, 5)} />
+      <Readout label="斜率误差" value={formatNumber(Math.abs(secant - tangent), 6)} accent />
+    </ExperimentLayout>
+  )
+}
+
+function IntegralLab() {
+  const [count, setCount] = useState(8)
+  const [upper, setUpper] = useState(3.2)
+  const [sampling, setSampling] = useState<'left' | 'midpoint' | 'right'>('midpoint')
+  const [functionId, setFunctionId] = useState<'quadratic' | 'wave'>('quadratic')
+
+  const fn = (value: number) =>
+    functionId === 'quadratic' ? 0.35 * value ** 2 + 0.65 : 1 + 0.55 * Math.sin(1.4 * value)
+  const exact =
+    functionId === 'quadratic'
+      ? (0.35 * upper ** 3) / 3 + 0.65 * upper
+      : upper + (0.55 * (1 - Math.cos(1.4 * upper))) / 1.4
+  const width = upper / count
+  const offset = sampling === 'left' ? 0 : sampling === 'right' ? 1 : 0.5
+  const approximation = Array.from({ length: count }, (_, index) => fn((index + offset) * width) * width).reduce(
+    (sum, area) => sum + area,
+    0,
+  )
+
+  const draw: LabDraw = (context, viewport) => {
+    drawGrid(context, viewport)
+
+    for (let index = 0; index < count; index++) {
+      const left = index * width
+      const sample = (index + offset) * width
+      const height = fn(sample)
+      const px = viewport.x(left)
+      const rectangleWidth = viewport.x(left + width) - px
+      const py = viewport.y(height)
+      context.fillStyle = 'rgba(209, 183, 125, 0.16)'
+      context.fillRect(px, py, rectangleWidth, viewport.y(0) - py)
+      context.strokeStyle = 'rgba(209, 183, 125, 0.52)'
+      context.lineWidth = Math.min(1, Math.max(0.45, rectangleWidth / 18))
+      context.strokeRect(px, py, rectangleWidth, viewport.y(0) - py)
+      if (count <= 24) drawPoint(context, viewport, sample, height, LAB_COLORS.gold, 3.2)
+    }
+
+    plotCurve(context, viewport, fn, LAB_COLORS.ivory, { lineWidth: 2.3 })
+    drawPoint(context, viewport, upper, 0, LAB_COLORS.sage, 4)
+  }
+
+  return (
+    <ExperimentLayout
+      canvas={<LabCanvas label="积分实验：曲线下方的黎曼矩形" draw={draw} xRange={[-0.7, 5]} yRange={[-0.75, 7]} />}
+      legend={[
+        [LAB_COLORS.ivory, '函数曲线'],
+        [LAB_COLORS.gold, '取样矩形'],
+        [LAB_COLORS.sage, '积分上界'],
+      ]}
+      formula={String.raw`$$\sum_{i=1}^{n} f(\xi_i)\,\Delta x\xrightarrow[n\to\infty]{}\int_a^b f(x)\,dx.$$`}
+      observation="积分不是记住一个求面积公式，而是先把连续区域分割成能够相加的小量。"
+    >
+      <ControlHeading label="实验参数" />
+      <label className="block space-y-2 text-sm text-[#c9c5b9]">
+        <span>被积函数</span>
+        <select aria-label="积分实验函数" value={functionId} onChange={(event) => setFunctionId(event.target.value as typeof functionId)} className={selectClassName}>
+          <option value="quadratic">f(x) = 0.35x² + 0.65</option>
+          <option value="wave">f(x) = 1 + 0.55sin(1.4x)</option>
+        </select>
+      </label>
+      <ParameterControl label="分割数 n" value={count} min={1} max={80} step={1} onChange={(value) => setCount(Math.round(value))} reset={8} />
+      <ParameterControl label="积分上界 b" value={upper} min={0.6} max={4.5} step={0.05} onChange={setUpper} reset={3.2} />
+      <fieldset className="space-y-2">
+        <legend className="text-sm text-[#c9c5b9]">取样位置</legend>
+        <div className="grid grid-cols-3 gap-1.5">
+          {([
+            ['left', '左端'],
+            ['midpoint', '中点'],
+            ['right', '右端'],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={sampling === value}
+              onClick={() => setSampling(value)}
+              className={`rounded-md py-2 text-xs transition-colors ${
+                sampling === value ? 'bg-[#c7ad70]/15 text-[#e2cb96]' : 'bg-white/[0.035] text-[#96978e] hover:text-[#ded9cc]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <Readout label="黎曼和" value={formatNumber(approximation, 6)} />
+      <Readout label="精确积分" value={formatNumber(exact, 6)} />
+      <Readout label="近似误差" value={formatNumber(Math.abs(approximation - exact), 7)} accent />
+    </ExperimentLayout>
+  )
+}
+
+function LinearLab() {
+  const [matrix, setMatrix] = useState({ a: 1.25, b: 0.7, c: 0.25, d: 0.9 })
+  const determinant = matrix.a * matrix.d - matrix.b * matrix.c
+  const trace = matrix.a + matrix.d
+  const discriminant = trace ** 2 - 4 * determinant
+  const eigenvalues = discriminant >= 0 ? [(trace + Math.sqrt(discriminant)) / 2, (trace - Math.sqrt(discriminant)) / 2] : []
+
+  function eigenvector(value: number): [number, number] {
+    if (Math.abs(matrix.b) > 0.001) return normalize([matrix.b, value - matrix.a])
+    if (Math.abs(matrix.c) > 0.001) return normalize([value - matrix.d, matrix.c])
+    return Math.abs(value - matrix.a) < 0.001 ? [1, 0] : [0, 1]
+  }
+
+  const draw: LabDraw = (context, viewport) => {
+    drawGrid(context, viewport, { step: 1 })
+    const transform = (pointX: number, pointY: number): [number, number] => [
+      matrix.a * pointX + matrix.b * pointY,
+      matrix.c * pointX + matrix.d * pointY,
+    ]
+
+    context.strokeStyle = 'rgba(136, 170, 160, 0.33)'
+    context.lineWidth = 1
+
+    for (let line = -4; line <= 4; line++) {
+      const [horizontalStartX, horizontalStartY] = transform(-4, line)
+      const [horizontalEndX, horizontalEndY] = transform(4, line)
+      const [verticalStartX, verticalStartY] = transform(line, -4)
+      const [verticalEndX, verticalEndY] = transform(line, 4)
+      context.beginPath()
+      context.moveTo(viewport.x(horizontalStartX), viewport.y(horizontalStartY))
+      context.lineTo(viewport.x(horizontalEndX), viewport.y(horizontalEndY))
+      context.moveTo(viewport.x(verticalStartX), viewport.y(verticalStartY))
+      context.lineTo(viewport.x(verticalEndX), viewport.y(verticalEndY))
+      context.stroke()
+    }
+
+    context.save()
+    context.setLineDash([5, 5])
+    context.strokeStyle = 'rgba(238, 232, 217, 0.5)'
+    context.strokeRect(viewport.x(0), viewport.y(1), viewport.x(1) - viewport.x(0), viewport.y(0) - viewport.y(1))
+    context.restore()
+
+    const corners = [transform(0, 0), transform(1, 0), transform(1, 1), transform(0, 1)]
+    context.fillStyle = LAB_COLORS.goldSoft
+    context.strokeStyle = LAB_COLORS.gold
+    context.lineWidth = 1.75
+    context.beginPath()
+    corners.forEach(([pointX, pointY], index) => {
+      if (index === 0) context.moveTo(viewport.x(pointX), viewport.y(pointY))
+      else context.lineTo(viewport.x(pointX), viewport.y(pointY))
+    })
+    context.closePath()
+    context.fill()
+    context.stroke()
+
+    const uniqueEigenvalues = eigenvalues.filter((value, index) => index === 0 || Math.abs(value - eigenvalues[0]) > 0.01)
+    for (const value of uniqueEigenvalues) {
+      const [directionX, directionY] = eigenvector(value)
+      context.save()
+      context.strokeStyle = 'rgba(201, 144, 127, 0.66)'
+      context.lineWidth = 1.35
+      context.setLineDash([7, 6])
+      context.beginPath()
+      context.moveTo(viewport.x(-4 * directionX), viewport.y(-4 * directionY))
+      context.lineTo(viewport.x(4 * directionX), viewport.y(4 * directionY))
+      context.stroke()
+      context.restore()
+    }
+
+    const originX = viewport.x(0)
+    const originY = viewport.y(0)
+    drawArrow(context, originX, originY, viewport.x(matrix.a), viewport.y(matrix.c), LAB_COLORS.ivory, 2.1)
+    drawArrow(context, originX, originY, viewport.x(matrix.b), viewport.y(matrix.d), LAB_COLORS.sage, 2.1)
+  }
+
+  const orientation = Math.abs(determinant) < 0.001 ? '降维：面积压缩为 0' : determinant < 0 ? '翻转方向' : '保持方向'
+
+  return (
+    <ExperimentLayout
+      canvas={<LabCanvas label="线性变换实验：矩阵作用下的平面网格与面积" draw={draw} xRange={[-4, 4]} yRange={[-3.2, 3.2]} />}
+      legend={[
+        [LAB_COLORS.gold, '变换后的单位正方形'],
+        [LAB_COLORS.sage, '变换后的网格'],
+        [LAB_COLORS.clay, '实特征方向'],
+      ]}
+      formula={String.raw`$$A\mathbf x=\begin{pmatrix}a&b\\c&d\end{pmatrix}\mathbf x,\qquad\det A=ad-bc.$$`}
+      observation="矩阵不是四个孤立数字：它同时规定整张平面怎样伸缩、剪切、翻转或降维。"
+    >
+      <ControlHeading label="矩阵元素" />
+      <div aria-label="当前矩阵" className="mx-auto grid w-fit grid-cols-2 gap-x-7 gap-y-2 border-x border-[#c7ad70]/40 px-5 py-1 font-mono text-base text-[#eee8d9]">
+        <span>{formatNumber(matrix.a, 2)}</span>
+        <span>{formatNumber(matrix.b, 2)}</span>
+        <span>{formatNumber(matrix.c, 2)}</span>
+        <span>{formatNumber(matrix.d, 2)}</span>
+      </div>
+      {(['a', 'b', 'c', 'd'] as const).map((key) => (
+        <ParameterControl
+          key={key}
+          label={`矩阵元素 ${key}`}
+          value={matrix[key]}
+          min={-2}
+          max={2}
+          step={0.05}
+          onChange={(value) => setMatrix((previous) => ({ ...previous, [key]: value }))}
+          reset={key === 'a' ? 1 : key === 'd' ? 1 : 0}
+        />
+      ))}
+      <button
+        type="button"
+        onClick={() => setMatrix({ a: 1, b: 0, c: 0, d: 1 })}
+        className="inline-flex items-center gap-2 text-sm text-[#b5afa0] transition-colors hover:text-[#eee8d9]"
+      >
+        <RotateCcw className="h-3.5 w-3.5" />恢复单位矩阵
+      </button>
+      <Readout label="行列式 det A" value={formatNumber(determinant, 4)} accent />
+      <Readout label="面积伸缩倍数" value={formatNumber(Math.abs(determinant), 4)} />
+      <Readout label="平面方向" value={orientation} />
+      <Readout
+        label="实特征值"
+        value={eigenvalues.length > 0 ? eigenvalues.map((value) => formatNumber(value, 3)).join('，') : '不存在实特征方向'}
+      />
+    </ExperimentLayout>
+  )
+}
+
+function TaylorLab() {
+  const [functionId, setFunctionId] = useState<'sin' | 'cos' | 'exp'>('sin')
+  const [degree, setDegree] = useState(5)
+  const [sample, setSample] = useState(1.8)
+
+  const fn = (value: number) => (functionId === 'sin' ? Math.sin(value) : functionId === 'cos' ? Math.cos(value) : Math.exp(value))
+  const polynomial = (value: number) => {
+    let result = 0
+    let factorial = 1
+
+    for (let index = 0; index <= degree; index++) {
+      if (index > 0) factorial *= index
+      let derivativeAtZero = 1
+      if (functionId === 'sin') derivativeAtZero = index % 2 === 0 ? 0 : index % 4 === 1 ? 1 : -1
+      if (functionId === 'cos') derivativeAtZero = index % 2 === 1 ? 0 : index % 4 === 0 ? 1 : -1
+      result += (derivativeAtZero * value ** index) / factorial
+    }
+
+    return result
+  }
+
+  const draw: LabDraw = (context, viewport) => {
+    drawGrid(context, viewport)
+    plotCurve(context, viewport, fn, LAB_COLORS.ivory, { lineWidth: 2.25 })
+    plotCurve(context, viewport, polynomial, LAB_COLORS.gold, { lineWidth: 2.1 })
+
+    const actual = fn(sample)
+    const approximate = polynomial(sample)
+    context.strokeStyle = LAB_COLORS.clay
+    context.lineWidth = 2
+    context.beginPath()
+    context.moveTo(viewport.x(sample), viewport.y(actual))
+    context.lineTo(viewport.x(sample), viewport.y(approximate))
+    context.stroke()
+    drawPoint(context, viewport, sample, actual, LAB_COLORS.ivory)
+    drawPoint(context, viewport, sample, approximate, LAB_COLORS.gold)
+  }
+
+  return (
+    <ExperimentLayout
+      canvas={<LabCanvas label="泰勒实验：原函数与不同阶数多项式的逼近" draw={draw} xRange={[-5, 5]} yRange={[-3.1, 4.1]} />}
+      legend={[
+        [LAB_COLORS.ivory, '原函数'],
+        [LAB_COLORS.gold, '泰勒多项式'],
+        [LAB_COLORS.clay, '观察点误差'],
+      ]}
+      formula={String.raw`$$P_n(x)=\sum_{k=0}^{n}\frac{f^{(k)}(0)}{k!}x^k,\qquad R_n(x)=f(x)-P_n(x).$$`}
+      observation="泰勒展开让局部导数信息逐阶进入多项式；展开点附近的贴合并不自动保证远处同样准确。"
+    >
+      <ControlHeading label="实验参数" />
+      <label className="block space-y-2 text-sm text-[#c9c5b9]">
+        <span>原函数</span>
+        <select aria-label="泰勒展开函数" value={functionId} onChange={(event) => setFunctionId(event.target.value as typeof functionId)} className={selectClassName}>
+          <option value="sin">f(x) = sin x</option>
+          <option value="cos">f(x) = cos x</option>
+          <option value="exp">f(x) = eˣ</option>
+        </select>
+      </label>
+      <ParameterControl label="展开阶数 n" value={degree} min={0} max={11} step={1} onChange={(value) => setDegree(Math.round(value))} reset={5} />
+      <ParameterControl label="误差观察点 x" value={sample} min={-4} max={4} step={0.05} onChange={setSample} reset={1.8} />
+      <Readout label="原函数 f(x)" value={formatNumber(fn(sample), 6)} />
+      <Readout label="多项式 Pₙ(x)" value={formatNumber(polynomial(sample), 6)} />
+      <Readout label="绝对误差 |Rₙ(x)|" value={formatNumber(Math.abs(fn(sample) - polynomial(sample)), 8)} accent />
+    </ExperimentLayout>
+  )
+}
+
+function ProbabilityLab() {
+  const [trials, setTrials] = useState(12)
+  const [chance, setChance] = useState(0.42)
+  const mean = trials * chance
+  const deviation = Math.sqrt(trials * chance * (1 - chance))
+  const masses = binomialMasses(trials, chance)
+  const centralProbability = masses.reduce((result, mass, index) => {
+    const standardized = (index - mean) / deviation
+    return result + (Math.abs(standardized) <= 1 ? mass : 0)
+  }, 0)
+
+  const draw: LabDraw = (context, viewport) => {
+    drawGrid(context, viewport, { step: 1 })
+
+    masses.forEach((mass, index) => {
+      const standardized = (index - mean) / deviation
+      const halfWidth = 0.5 / deviation
+      const left = viewport.x(standardized - halfWidth)
+      const right = viewport.x(standardized + halfWidth)
+      const density = mass * deviation
+      const top = viewport.y(density)
+
+      context.fillStyle = 'rgba(209, 183, 125, 0.24)'
+      context.fillRect(left + 0.7, top, Math.max(1, right - left - 1.4), viewport.y(0) - top)
+      context.strokeStyle = 'rgba(209, 183, 125, 0.65)'
+      context.lineWidth = 1
+      context.strokeRect(left + 0.7, top, Math.max(1, right - left - 1.4), viewport.y(0) - top)
+    })
+
+    plotCurve(context, viewport, normalDensity, LAB_COLORS.ivory, { lineWidth: 2.2 })
+
+    context.strokeStyle = 'rgba(136, 170, 160, 0.66)'
+    context.setLineDash([4, 5])
+    for (const bound of [-1, 1]) {
+      context.beginPath()
+      context.moveTo(viewport.x(bound), viewport.y(0))
+      context.lineTo(viewport.x(bound), viewport.y(normalDensity(bound)))
+      context.stroke()
+    }
+    context.setLineDash([])
+  }
+
+  return (
+    <ExperimentLayout
+      canvas={<LabCanvas label="中心极限定理实验：标准化二项分布与正态密度" draw={draw} xRange={[-4.3, 4.3]} yRange={[-0.055, 0.54]} />}
+      legend={[
+        [LAB_COLORS.gold, '标准化二项分布'],
+        [LAB_COLORS.ivory, '标准正态密度'],
+        [LAB_COLORS.sage, '一个标准差区间'],
+      ]}
+      formula={String.raw`$$Z_n=\frac{S_n-np}{\sqrt{np(1-p)}}\xrightarrow{\,d\,}\mathcal N(0,1).$$`}
+      observation="这里展示的是独立同分布伯努利试验的标准化和；试验次数不足或概率过于偏斜时，正态近似仍可能明显失准。"
+    >
+      <ControlHeading label="伯努利试验" />
+      <ParameterControl label="独立试验次数 n" value={trials} min={2} max={100} step={1} onChange={(value) => setTrials(Math.round(value))} reset={12} />
+      <ParameterControl label="单次成功概率 p" value={chance} min={0.1} max={0.9} step={0.01} onChange={setChance} reset={0.42} />
+      <Readout label="期望 np" value={formatNumber(mean, 3)} />
+      <Readout label="标准差 √np(1−p)" value={formatNumber(deviation, 4)} />
+      <Readout label="P(|Zₙ| ≤ 1)" value={formatNumber(centralProbability, 5)} accent />
+      <Readout label="正态近似 P(|Z| ≤ 1)" value="0.68269" />
+      <p className="pt-2 text-xs leading-6 text-[#85867d]">
+        柱形高度按区间宽度归一化，因此可以与连续正态密度放在同一张图中比较。
+      </p>
+    </ExperimentLayout>
+  )
+}
+
+function DirectionFieldLab() {
+  const [growth, setGrowth] = useState(1)
+  const [initial, setInitial] = useState(0.55)
+  const carryingCapacity = 2
+  const slope = (value: number) => growth * value * (1 - value / carryingCapacity)
+
+  const solution = (time: number, initialValue: number) =>
+    carryingCapacity / (1 + (carryingCapacity / initialValue - 1) * Math.exp(-growth * time))
+
+  const draw: LabDraw = (context, viewport) => {
+    drawGrid(context, viewport)
+    const scaleRatio = ((viewport.height / (viewport.yMax - viewport.yMin)) / viewport.width) *
+      (viewport.xMax - viewport.xMin)
+
+    for (let time = 0; time <= 5.4; time += 0.42) {
+      for (let height = 0; height <= 3.5; height += 0.29) {
+        const angle = Math.atan(slope(height) * scaleRatio)
+        const halfLength = 7.4
+        const centerX = viewport.x(time)
+        const centerY = viewport.y(height)
+        const dx = Math.cos(angle) * halfLength
+        const dy = Math.sin(angle) * halfLength
+        context.strokeStyle = 'rgba(209, 183, 125, 0.37)'
+        context.lineWidth = 1.05
+        context.beginPath()
+        context.moveTo(centerX - dx, centerY + dy)
+        context.lineTo(centerX + dx, centerY - dy)
+        context.stroke()
+      }
+    }
+
+    plotCurve(context, viewport, () => carryingCapacity, LAB_COLORS.sage, { dashed: true, lineWidth: 1.5 })
+
+    for (const start of [0.23, 0.95, 1.55, 2.55, 3.15]) {
+      plotCurve(context, viewport, (time) => solution(time, start), 'rgba(238, 232, 217, 0.24)', {
+        lineWidth: 1.3,
+        domain: [0, 5.5],
+      })
+    }
+
+    plotCurve(context, viewport, (time) => solution(time, initial), LAB_COLORS.gold, {
+      lineWidth: 2.4,
+      domain: [0, 5.5],
+    })
+    drawPoint(context, viewport, 0, initial, LAB_COLORS.gold, 5)
+  }
+
+  return (
+    <ExperimentLayout
+      canvas={<LabCanvas label="常微分方程实验：Logistic 方程的方向场与解轨道" draw={draw} xRange={[-0.6, 5.7]} yRange={[-0.45, 3.7]} />}
+      legend={[
+        [LAB_COLORS.gold, '选定初值轨道'],
+        [LAB_COLORS.ivory, '其他初值轨道'],
+        [LAB_COLORS.sage, '稳定平衡 y = 2'],
+      ]}
+      formula={String.raw`$$\frac{dy}{dt}=r y\left(1-\frac{y}{K}\right),\qquad K=2,\quad y(0)=y_0.$$`}
+      observation="微分方程先在每一点指定变化方向；一条解曲线之所以成立，是因为它始终顺着这些方向前进。"
+    >
+      <ControlHeading label="Logistic 方程" />
+      <ParameterControl label="增长率 r" value={growth} min={0.2} max={2.2} step={0.05} onChange={setGrowth} reset={1} />
+      <ParameterControl label="初始值 y₀" value={initial} min={0.12} max={3.4} step={0.02} onChange={setInitial} reset={0.55} />
+      <Readout label="初始斜率 y′(0)" value={formatNumber(slope(initial), 4)} />
+      <Readout label="t = 3 时的解" value={formatNumber(solution(3, initial), 5)} />
+      <Readout label="稳定平衡点" value="y = 2" accent />
+      <Readout label="不稳定平衡点" value="y = 0" />
+      <p className="pt-2 text-xs leading-6 text-[#85867d]">
+        当 y₀ &gt; 0 且 r &gt; 0 时，解轨道最终趋向环境容量 K；不同初值只改变到达的路径。
+      </p>
+    </ExperimentLayout>
+  )
+}
+
+interface ExperimentLayoutProps {
+  canvas: ReactNode
+  children: ReactNode
+  formula: string
+  observation: string
+  legend: readonly (readonly [color: string, label: string])[]
+}
+
+function ExperimentLayout({ canvas, children, formula, observation, legend }: ExperimentLayoutProps) {
+  return (
+    <>
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(230px,280px)] lg:gap-9 xl:grid-cols-[minmax(0,1fr)_minmax(240px,285px)]">
+        <section aria-label="交互式数学画布" className="min-w-0 overflow-hidden rounded-xl bg-[#12130f]/90 ring-1 ring-white/[0.045]">
+          {canvas}
+          <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[0.055] px-4 py-3.5 sm:px-5">
+            {legend.map(([color, label]) => (
+              <span key={label} className="inline-flex items-center gap-2 text-xs text-[#aaa89e]">
+                <span className="h-[2px] w-4 rounded-full" style={{ backgroundColor: color }} />
+                {label}
+              </span>
+            ))}
+          </div>
+        </section>
+        <aside aria-label="实验控制面板" className="space-y-5 px-1 pt-0.5 sm:px-0 lg:pt-1">
+          {children}
+        </aside>
+      </div>
+
+      <section className="mt-11 max-w-3xl border-l border-[#c7ad70]/30 pl-5 sm:pl-7" aria-label="实验背后的数学原理">
+        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#c7ad70]">背后的数学</p>
+        <Markdown content={formula} className="mt-3 overflow-x-auto" />
+        <p className="mt-3 text-sm leading-7 text-[#b2aea2] sm:text-[15px]">{observation}</p>
+      </section>
+    </>
+  )
+}
+
+interface ParameterControlProps {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  onChange: (value: number) => void
+  reset: number
+}
+
+export function ParameterControl({ label, value, min, max, step, onChange, reset }: ParameterControlProps) {
+  const decimalPlaces = step >= 1 ? 0 : Math.max(0, String(step).split('.')[1]?.length ?? 0)
+
+  return (
+    <label className="block space-y-2.5">
+      <span className="flex items-center justify-between gap-3 text-sm">
+        <span className="text-[#c9c5b9]">{label}</span>
+        <input
+          aria-label={`${label}数值`}
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          value={value.toFixed(decimalPlaces)}
+          onChange={(event) => {
+            const next = Number(event.target.value)
+            if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, next)))
+          }}
+          onDoubleClick={() => onChange(reset)}
+          className="h-7 w-[76px] rounded border border-white/[0.08] bg-transparent px-1.5 text-right font-mono text-xs text-[#e2cf9e] outline-none focus:border-[#c7ad70]/55"
+        />
+      </span>
+      <input
+        aria-label={label}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        onDoubleClick={() => onChange(reset)}
+        className="h-1 w-full cursor-pointer accent-[#c7ad70]"
+      />
+    </label>
+  )
+}
+
+function ControlHeading({ label }: { label: string }) {
+  return <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8d8e83]">{label}</p>
+}
+
+function Readout({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3 text-sm">
+      <span className="text-[#aaa69b]">{label}</span>
+      <output aria-label={label} className={`max-w-[58%] text-right font-mono text-xs leading-5 ${accent ? 'text-[#e2c996]' : 'text-[#ded9cd]'}`}>
+        {value}
+      </output>
+    </div>
+  )
+}
+
+function normalize([pointX, pointY]: [number, number]): [number, number] {
+  const length = Math.hypot(pointX, pointY)
+  return length < 0.0001 ? [1, 0] : [pointX / length, pointY / length]
+}
+
+function binomialMasses(count: number, probability: number) {
+  const result = [Math.pow(1 - probability, count)]
+  for (let index = 0; index < count; index++) {
+    result.push((result[index] * (count - index) * probability) / ((index + 1) * (1 - probability)))
+  }
+  return result
+}
+
+function normalDensity(value: number) {
+  return Math.exp(-(value ** 2) / 2) / Math.sqrt(2 * Math.PI)
+}

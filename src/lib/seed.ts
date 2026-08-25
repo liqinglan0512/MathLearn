@@ -83,7 +83,7 @@ export const seedProblems: Problem[] = [
     id: 'p7',
     title: '级数：正项级数敛散性判别',
     statement:
-      '判别级数 $\\displaystyle\\sum_{n=2}^{\\infty} \\frac{1}{n \\ln n \\,(\\ln \\ln n)^p}$ 的敛散性（$p > 0$），并给出完整的积分判别论证。',
+      '判别级数 $\\displaystyle\\sum_{n=3}^{\\infty} \\frac{1}{n \\ln n \\,(\\ln \\ln n)^p}$ 的敛散性（$p > 0$），并给出完整的积分判别论证。',
     chapter: '数学分析',
     difficulty: '入门',
     competition: '考研数学',
@@ -96,7 +96,7 @@ export const seedProblems: Problem[] = [
     id: 'p8',
     title: '概率：随机游动的首达时',
     statement:
-      '质点从原点出发做一维对称随机游动，每步以概率 $\\frac12$ 向左或向右移动 $1$ 个单位。\n\n**求：** 首次到达 $+N$ 的期望步数（设出发点为 $0$，$N$ 为正整数）。',
+      '质点从原点出发做一维对称随机游动，每步以概率 $\\frac12$ 向左或向右移动 $1$ 个单位。\n\n**求：** 首次到达 $+N$ 的期望步数，并判断它是否有限（设出发点为 $0$，$N$ 为正整数，且左侧没有吸收边界）。',
     chapter: '概率统计',
     difficulty: '冲刺',
     competition: '数学建模竞赛',
@@ -136,7 +136,7 @@ export const seedSolutions: Solution[] = [
     authorId: 'admin',
     authorName: 'MathForge 官方',
     content:
-      '由 $f(0)=0$ 与牛顿–莱布尼茨公式：\n$$f(x) = \\int_0^x f\'(t)\\,\\mathrm{d}t$$\n\n对右端用 Cauchy–Schwarz：\n$$f^2(x) \\le \\left(\\int_0^x 1^2\\,\\mathrm{d}t\\right)\\left(\\int_0^x (f\'(t))^2\\,\\mathrm{d}t\\right) = x \\int_0^x (f\'(t))^2\\,\\mathrm{d}t \\le x \\int_0^1 (f\')^2$$\n\n两边在 $[0,1]$ 上积分：\n$$\\int_0^1 f^2(x)\\,\\mathrm{d}x \\le \\left(\\int_0^1 x\\,\\mathrm{d}x\\right)\\left(\\int_0^1 (f\')^2\\right) = \\frac{1}{2}\\int_0^1 (f\')^2$$\n\n等号成立条件留给读者思考（提示：考察 $f = cx$ 并检查边界）。',
+      '由 $f(0)=0$ 与牛顿–莱布尼茨公式：\n$$f(x) = \\int_0^x f\'(t)\\,\\mathrm{d}t$$\n\n对右端用 Cauchy–Schwarz：\n$$f^2(x) \\le \\left(\\int_0^x 1^2\\,\\mathrm{d}t\\right)\\left(\\int_0^x (f\'(t))^2\\,\\mathrm{d}t\\right) = x \\int_0^x (f\'(t))^2\\,\\mathrm{d}t \\le x \\int_0^1 (f\')^2$$\n\n两边在 $[0,1]$ 上积分：\n$$\\int_0^1 f^2(x)\\,\\mathrm{d}x \\le \\left(\\int_0^1 x\\,\\mathrm{d}x\\right)\\left(\\int_0^1 (f\')^2\\right) = \\frac{1}{2}\\int_0^1 (f\')^2$$\n\n**审计备注：** 常数 $\\tfrac12$ 来自上述估计，并非由 $f(x)=x$ 取到；代入该函数时，两边分别为 $\\tfrac13$ 和 $\\tfrac12$。除零函数外，不能沿这条估计链取得等号。',
     attachments: [],
     createdAt: Date.now() - 86400000 * 6,
     likes: 15,
@@ -168,7 +168,7 @@ export const seedComments: Comment[] = [
     targetId: 's3',
     authorId: 'u_demo',
     authorName: '竞赛汪',
-    content: '常数 1/2 是最优的吗？我试了下 $f=x$，两边相等，确实取到。',
+    content: '这里要检查等号：取 $f=x$ 时，左边是 $\\tfrac13$，右边是 $\\tfrac12$，并不相等，因此不能用这个例子断言常数最优。',
     createdAt: Date.now() - 86400000 * 5,
   },
 ]
@@ -186,7 +186,7 @@ const seedArticlesBase: Article[] = [
 
 微积分的核心思想只有一句话：**用简单的函数逼近复杂的函数**。最简单的函数是多项式，它只需要加减乘。
 
-于是问题变成：给定 $f$ 在 $x_0$ 附近的信息，找一个多项式 $P(x)$，使得两者在 $x_0$ 附近尽可能像。
+于是问题变成：给定 $f$ 在 $x_0$ 附近的信息，找一个多项式 $P(x)$，使得两者在 $x_0$ 附近尽可能像。讨论 $n$ 阶拉格朗日余项时，下面始终假设 $f$ 在相关闭区间上具有连续的 $n+1$ 阶导数；仅在一点存在若干阶导数，并不足以直接保证这种余项公式。
 
 ## 2. 一阶：切线，即以直代曲
 
@@ -202,13 +202,13 @@ $$
 P_1(x) = f(x_0) + f'(x_0)\\,(x - x_0).
 $$
 
-这就是切线。误差有多大？由拉格朗日中值定理，存在 $\\xi$ 介于 $x_0$ 与 $x$ 之间，使得
+这就是切线。误差有多大？当 $f$ 在相关区间上二阶连续可导时，由柯西中值定理导出的拉格朗日余项可知，存在 $\\xi$ 介于 $x_0$ 与 $x$ 之间，使得
 
 $$
 f(x) - P_1(x) = \\frac{f''(\\xi)}{2}\\,(x-x_0)^2.
 $$
 
-误差是**二阶小量**。这是一切后续推理的原型。
+由于该区间上的 $f''$ 有界，误差至多为 $O((x-x_0)^2)$。这是一切后续推理的原型。
 
 ## 3. 推广：匹配更多阶导数
 
@@ -272,7 +272,7 @@ $$
 
 平面上，向量 $\\mathbf{u}$ 在 $\\mathbf{v}$ 方向上的投影长度是 $\\|\\mathbf{u}\\| \\, |\\cos\\theta|$，它当然不超过 $\\|\\mathbf{u}\\|$ 本身。
 
-把这个平凡的事实写仔细一点。$\\mathbf{u}$ 在 $\\mathbf{v}$ 方向的投影系数为
+先单独处理 $\\mathbf{v}=\\mathbf0$：此时内积和右侧模长乘积都为零，不等式直接取等。以下假设 $\\mathbf{v}\\ne\\mathbf0$，这样除以 $\\langle\\mathbf{v},\\mathbf{v}\\rangle$ 才有意义。把投影写仔细一点，$\\mathbf{u}$ 在 $\\mathbf{v}$ 方向的投影系数为
 
 $$
 t = \\frac{\\langle \\mathbf{u}, \\mathbf{v} \\rangle}{\\langle \\mathbf{v}, \\mathbf{v} \\rangle}.
@@ -305,7 +305,7 @@ $$
 \\boxed{\\,\\langle \\mathbf{u}, \\mathbf{v} \\rangle^2 \\le \\|\\mathbf{u}\\|^2 \\, \\|\\mathbf{v}\\|^2\\,}
 $$
 
-等号成立当且仅当 $\\mathbf{u} = t\\,\\mathbf{v}$，即两向量共线，此时剩余分量恰好为零。
+当 $\\mathbf{v}\\ne\\mathbf0$ 时，等号成立当且仅当 $\\mathbf{u}=t\\,\\mathbf{v}$，此时剩余分量恰好为零；再合并零向量情形，完整结论是：等号成立当且仅当两向量线性相关。
 
 ## 3. 代数形式
 
@@ -903,7 +903,293 @@ $$
   },
 ]
 
-export const seedArticles: Article[] = [...seedArticlesBase, ...seedArticlesMore, ...seedArticlesNumGeo]
+const seedArticlesLearningLoop: Article[] = [
+  {
+    id: 'a12',
+    title: 'Stolz 定理：差分比为什么决定数列商的极限',
+    summary: '从离散望远镜求和出发，说明为什么局部增量之比能控制整体商，并逐一检查分母条件。',
+    topic: '数学分析',
+    authorId: 'admin',
+    authorName: 'MathForge 官方',
+    createdAt: Date.now() - 86400000,
+    content: `## 1. 起点：整体比例能不能由一步变化决定
+
+已知两个数列 $a_n$ 与 $b_n$。直接求 $a_n/b_n$ 的极限可能困难，但相邻两步的差分
+
+$$
+\\frac{a_{n+1}-a_n}{b_{n+1}-b_n}
+$$
+
+往往更简单。问题是：这种局部比例凭什么能代表整体比例？
+
+## 2. 假设：哪些条件必须先摆在桌面上
+
+设 $b_n$ **严格递增**，并且 $b_n\\to+\\infty$。如果
+
+$$
+\\lim_{n\\to\\infty}\\frac{a_{n+1}-a_n}{b_{n+1}-b_n}=L,
+\\qquad L\\in\\mathbb R,
+$$
+
+那么我们希望证明 $a_n/b_n\\to L$。
+
+严格递增保证每个差分 $b_{n+1}-b_n$ 都为正；趋于无穷保证起始项产生的有限误差最终被稀释。
+
+## 3. 从差分不等式到望远镜求和
+
+任取 $\\varepsilon>0$。由差分比收敛，存在 $N$，对所有 $k\\ge N$ 有
+
+$$
+L-\\varepsilon
+<\\frac{a_{k+1}-a_k}{b_{k+1}-b_k}
+<L+\\varepsilon.
+$$
+
+由于 $b_{k+1}-b_k>0$，不等号方向不会改变：
+
+$$
+(L-\\varepsilon)(b_{k+1}-b_k)
+<a_{k+1}-a_k
+<(L+\\varepsilon)(b_{k+1}-b_k).
+$$
+
+从 $k=N$ 加到 $n-1$，中间项依次相消：
+
+$$
+(L-\\varepsilon)(b_n-b_N)
+<a_n-a_N
+<(L+\\varepsilon)(b_n-b_N).
+$$
+
+这一步就是整个定理的核心：**整体差值是全部局部增量的和**。
+
+## 4. 为什么初始项会消失
+
+当 $n$ 足够大时，$b_n>0$。把上式除以 $b_n$：
+
+$$
+(L-\\varepsilon)\\left(1-\\frac{b_N}{b_n}\\right)+\\frac{a_N}{b_n}
+<\\frac{a_n}{b_n}
+<(L+\\varepsilon)\\left(1-\\frac{b_N}{b_n}\\right)+\\frac{a_N}{b_n}.
+$$
+
+由于 $b_n\\to+\\infty$，固定常数 $a_N/b_n$ 和 $b_N/b_n$ 都趋于零。于是
+
+$$
+L-\\varepsilon
+\\le\\liminf_{n\\to\\infty}\\frac{a_n}{b_n}
+\\le\\limsup_{n\\to\\infty}\\frac{a_n}{b_n}
+\\le L+\\varepsilon.
+$$
+
+再让 $\\varepsilon\\downarrow0$，得到
+
+$$
+\\boxed{\\lim_{n\\to\\infty}\\frac{a_n}{b_n}=L.}
+$$
+
+## 5. 条件拿掉会发生什么
+
+如果 $b_n$ 不趋于无穷，有限起始项就不一定被稀释。例如取 $a_n\\equiv1$ 与严格递增的 $b_n=2-\\frac1n$，差分比恒等于 $0$，但 $a_n/b_n\\to\\frac12\\ne0$。这说明即使保留严格单调性，去掉趋于无穷这一条件，结论仍可能失效。
+
+因此，使用 Stolz 时不能只看到“差分好算”；必须先检查分母是否严格递增、是否趋于无穷，以及差分极限是否真的存在。$\\blacksquare$`,
+  },
+  {
+    id: 'a13',
+    title: '拉格朗日中值定理：平均变化率为什么会在某一点出现',
+    summary: '从两端点的割线出发，减去这条直线，把平均变化率问题还原为 Rolle 定理。',
+    topic: '数学分析',
+    authorId: 'admin',
+    authorName: 'MathForge 官方',
+    createdAt: Date.now() - 86400000,
+    content: `## 1. 起点：整体速度在哪里变成瞬时速度
+
+如果只知道 $f(a)$ 与 $f(b)$，我们可以计算整个区间的平均变化率：
+
+$$
+m=\\frac{f(b)-f(a)}{b-a}.
+$$
+
+真正的问题是：能否证明区间里至少有一个点，瞬时变化率恰好等于这个整体平均值？
+
+## 2. 构造一条经过两个端点的割线
+
+假设 $a<b$，$f$ 在闭区间 $[a,b]$ 上连续，并在开区间 $(a,b)$ 内可导。经过两个端点的直线是
+
+$$
+\\ell(x)=f(a)+\\frac{f(b)-f(a)}{b-a}(x-a).
+$$
+
+它的导数恒等于平均斜率 $m$。
+
+## 3. 把目标改写成一个端点相等的问题
+
+构造新函数
+
+$$
+g(x)=f(x)-\\ell(x).
+$$
+
+由于割线穿过两个端点，立即得到
+
+$$
+g(a)=0,
+\\qquad
+g(b)=0.
+$$
+
+因此，我们已经把“寻找斜率等于 $m$ 的点”改写成“寻找导数为零的点”。
+
+## 4. 由 Rolle 定理完成最后一步
+
+$g$ 仍在 $[a,b]$ 上连续、在 $(a,b)$ 内可导，而且端点取值相同。Rolle 定理给出某个 $\\xi\\in(a,b)$，满足
+
+$$
+g'(\\xi)=0.
+$$
+
+把 $g=f-\\ell$ 代回，就得到
+
+$$
+\\boxed{
+f'(\\xi)=\\frac{f(b)-f(a)}{b-a}.
+}
+$$
+
+推导链条因此非常具体：
+
+$$
+\\text{构造割线}
+\\longrightarrow\\text{减去割线}
+\\longrightarrow\\text{端点相等}
+\\longrightarrow\\text{Rolle 定理}
+\\longrightarrow\\text{中值结论}.
+$$
+
+## 5. 哪个条件不能省
+
+仅有连续性还不够。取 $f(x)=|x|$，区间为 $[-1,1]$。割线斜率等于 $0$，但内部除 $0$ 之外的导数只有 $-1$ 与 $1$，而 $0$ 处不可导，因此不存在满足结论的点。
+
+端点连续性同样不能偷偷省掉：令 $f(x)=x$ 对 $0\\le x<1$ 成立，但规定 $f(1)=2$。整体割线斜率为 $2$，内部导数却恒等于 $1$。
+
+所以定理的优雅不在于公式本身，而在于每一个假设都为 Rolle 定理铺好了路。$\\blacksquare$`,
+  },
+  {
+    id: 'a14',
+    title: '随机游动首达时：几乎必然到达为什么不代表期望有限',
+    summary: '先加上有限左边界，再用吸收概率和逐步放开的边界，区分几乎必然发生与期望时间无穷。',
+    topic: '概率论',
+    authorId: 'admin',
+    authorName: 'MathForge 官方',
+    createdAt: Date.now() - 86400000,
+    content: `## 1. 起点：一定会发生，是否意味着平均等待有限
+
+设对称随机游动从 $S_0=0$ 开始，每一步独立地以概率 $1/2$ 加一或减一。记首次到达 $+N$ 的时间为
+
+$$
+T_N=\\inf\\{n\\ge0:S_n=N\\},
+\\qquad N\\ge1.
+$$
+
+直觉告诉我们，路径迟早会碰到 $N$。但“迟早”不等于“平均只需要有限步”。
+
+## 2. 先把问题放进一个有限区间
+
+额外放置一个左吸收边界 $-M$，并定义
+
+$$
+\\tau_M=T_N\\wedge T_{-M}.
+$$
+
+这是一个有限状态区间里的首次出界时间。它对应的两个基本量都可以通过一阶条件直接计算。
+
+## 3. 到达右边界的概率
+
+记 $q(k)$ 为从位置 $k$ 出发先到达 $N$ 的概率。它满足
+
+$$
+q(k)=\\frac{q(k-1)+q(k+1)}{2},
+\\qquad
+q(-M)=0,
+\\quad
+q(N)=1.
+$$
+
+满足这些条件的解是
+
+$$
+q(k)=\\frac{k+M}{M+N}.
+$$
+
+因此从原点出发时，
+
+$$
+\\mathbb P(T_N<T_{-M})=\\frac{M}{M+N}
+\\xrightarrow[M\\to\\infty]{}1.
+$$
+
+由于事件 $\\{T_N<T_{-M}\\}$ 随 $M$ 增大而递增，并最终覆盖所有有限时间到达 $N$ 的路径，故
+
+$$
+\\mathbb P(T_N<\\infty)=1.
+$$
+
+## 4. 但有限区间的平均等待会不断长大
+
+记 $u(k)=\\mathbb E_k[\\tau_M]$。逐步分析给出
+
+$$
+u(k)=1+\\frac{u(k-1)+u(k+1)}{2},
+\\qquad
+u(-M)=u(N)=0.
+$$
+
+可以直接代入检验，唯一解为
+
+$$
+u(k)=(k+M)(N-k).
+$$
+
+特别地，
+
+$$
+\\mathbb E_0[\\tau_M]=MN.
+$$
+
+而 $\\tau_M\\le T_N$，因此对每一个正整数 $M$ 都有
+
+$$
+\\mathbb E_0[T_N]\\ge MN.
+$$
+
+令 $M\\to\\infty$，得到
+
+$$
+\\boxed{\\mathbb E_0[T_N]=+\\infty.}
+$$
+
+## 5. 最容易被跳过的逻辑
+
+停时几乎必然有限，并不自动意味着它具有有限期望；把鞅直接停在 $T_N$ 时，不能未经检查就套用可选停止定理。
+
+这道题的真正结论是：
+
+$$
+\\mathbb P(T_N<\\infty)=1,
+\\qquad
+\\mathbb E[T_N]=\\infty.
+$$
+
+概率一的事件和有限平均等待，是两件不同的事。$\\blacksquare$`,
+  },
+]
+
+export const seedArticles: Article[] = [
+  ...seedArticlesBase,
+  ...seedArticlesMore,
+  ...seedArticlesNumGeo,
+  ...seedArticlesLearningLoop,
+]
 
 export const seedPapers: Paper[] = [
   {
