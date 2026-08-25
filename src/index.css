@@ -41,10 +41,14 @@
   }
   html {
     color-scheme: dark;
+    overflow-x: clip;
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', 'SF Pro Display', 'PingFang SC', 'Noto Sans SC',
+      'Microsoft YaHei', system-ui, sans-serif;
     font-feature-settings: 'cv11', 'ss01';
+    overflow-x: clip;
   }
   ::selection {
     background: rgb(165 180 252 / 0.25);
@@ -88,6 +92,112 @@
   border: 1px solid rgb(255 255 255 / 0.08);
 }
 
+/* ---- 首页：铺满视口的 WebGL 深空场景，文字始终优先 ---- */
+.home-hero {
+  width: 100vw;
+  min-height: clamp(620px, 82svh, 790px);
+  margin-left: calc(50% - 50vw);
+  border-bottom: 1px solid rgb(255 255 255 / 0.065);
+  background: #050508;
+}
+
+.home-hero-canvas {
+  opacity: 0.96;
+}
+
+.home-hero-overlay {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(5 5 8 / 0.99) 0%,
+      rgb(5 5 8 / 0.94) 21%,
+      rgb(5 5 8 / 0.79) 42%,
+      rgb(5 5 8 / 0.33) 65%,
+      rgb(5 5 8 / 0.09) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgb(5 5 8 / 0.42) 0%,
+      transparent 24%,
+      transparent 73%,
+      rgb(5 5 8 / 0.75) 100%
+    );
+}
+
+.home-hero-title {
+  font-size: clamp(2.5rem, 5.8vw, 4.35rem);
+  letter-spacing: -0.055em;
+}
+
+.home-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.home-eyebrow::before {
+  width: 1.55rem;
+  height: 1px;
+  background: rgb(165 180 252 / 0.76);
+  content: '';
+}
+
+.home-feature {
+  background: rgb(13 13 19 / 0.52);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.home-feature:hover,
+.home-feature:focus-visible {
+  border-color: rgb(185 190 232 / 0.2);
+  background: rgb(20 20 29 / 0.72);
+  transform: translateY(-2px);
+}
+
+.home-manifesto {
+  background:
+    radial-gradient(460px 220px at 94% 8%, rgb(99 102 241 / 0.1), transparent 72%),
+    rgb(14 14 20 / 0.58);
+}
+
+@media (max-width: 640px) {
+  .home-hero {
+    min-height: 720px;
+  }
+
+  .home-hero-canvas {
+    opacity: 0.8;
+  }
+
+  .home-hero-overlay {
+    background:
+      linear-gradient(90deg, rgb(5 5 8 / 0.96), rgb(5 5 8 / 0.53) 72%, rgb(5 5 8 / 0.23)),
+      linear-gradient(180deg, rgb(5 5 8 / 0.32), transparent 38%, rgb(5 5 8 / 0.85));
+  }
+
+  .home-hero-title {
+    font-size: clamp(2rem, 9vw, 3.35rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cosmos-bg::after {
+    animation: none;
+  }
+
+  .home-feature {
+    transition: none;
+  }
+
+  .home-feature:hover,
+  .home-feature:focus-visible {
+    transform: none;
+  }
+}
+
 /* ---- Markdown + KaTeX 深色排版 ---- */
 .md { line-height: 1.9; font-size: 0.95rem; color: #d4d4d8; overflow-wrap: break-word; }
 .md h1, .md h2, .md h3 { font-weight: 600; letter-spacing: -0.01em; margin: 1.7em 0 0.65em; color: #f4f4f5; }
@@ -107,9 +217,11 @@
 .md code { background: rgb(255 255 255 / 0.07); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; color: #e4e4e7; }
 .md pre { background: #050508; border: 1px solid rgb(255 255 255 / 0.08); border-radius: 6px; padding: 14px; overflow-x: auto; }
 .md pre code { background: transparent; padding: 0; color: inherit; }
-.md .katex-display { margin: 1.1em 0; overflow-x: auto; overflow-y: hidden; padding: 4px 2px; }
-.md .katex-display > .katex { color: #f4f4f5; }
-.md .katex { font-size: 1.06em; }
+.md .katex-display { margin: 1.35em 0; overflow-x: auto; overflow-y: hidden; padding: 6px 2px; }
+.md .katex { font-size: 1.06em; color: #f4f4f5; }
+/* 兼容兜底：若渲染端是 katex 0.16（旧类名 stretchy），保证 fbox/boxed 仍能撑满宽度 */
+.katex .stretchy { display: block; overflow: hidden; position: relative; width: 100%; }
+.katex .fbox { border-color: currentColor; }
 .md table { border-collapse: collapse; margin: 0.9em 0; font-size: 0.9em; }
 .md th, .md td { border: 1px solid rgb(255 255 255 / 0.1); padding: 6px 12px; }
 

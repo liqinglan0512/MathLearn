@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local visual-debug captures and temporary browser profiles
+/debug-shots/
+/debug-boxed.mjs
+/live-check.css
