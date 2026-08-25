@@ -14,7 +14,7 @@ export default function NewArticle() {
   const nav = useNavigate()
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
-  const [topic, setTopic] = useState<Chapter>('数学分析')
+  const [topic, setTopic] = useState<Chapter>('函数')
   const [content, setContent] = useState('')
   const [err, setErr] = useState('')
 

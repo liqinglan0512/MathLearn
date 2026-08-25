@@ -7,6 +7,17 @@ import { inspectAttr } from 'kimi-plugin-inspect-react'
 export default defineConfig({
   base: '/',
   plugins: [inspectAttr(), react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalizedId = id.replaceAll('\\', '/')
+          if (normalizedId.includes('/src/lib/euclid-data.json')) return 'euclid-corpus'
+          if (normalizedId.includes('/node_modules/')) return 'vendor'
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
   },

@@ -30,7 +30,7 @@ export function MarkdownEditor({
           </button>
         ))}
         <span className="ml-auto hidden text-xs text-neutral-400 sm:block">
-          支持 Markdown 与 LaTeX（$…$ 行内，$$…$$ 独立公式）
+          支持 Markdown、行内数学公式与独立公式
         </span>
       </div>
       {tab === 'write' ? (

@@ -5,6 +5,7 @@ import ExamWorkspace from '@/components/ExamWorkspace'
 import { parsePaperQuestions, recommendedMinutes } from '@/lib/exam'
 import { store } from '@/lib/store'
 import { Markdown } from '@/components/Markdown'
+import { MathProse } from '@/components/reading/MathProse'
 import { AttachmentList } from '@/components/Attachments'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -38,7 +39,7 @@ export default function PaperDetail() {
           <Badge variant="outline">{paper.competition}</Badge>
           <Badge variant="outline">{paper.year} 年</Badge>
         </div>
-        <h1 className="mt-5 text-2xl font-semibold leading-tight tracking-tight text-[#eee8da] sm:text-3xl">{paper.title}</h1>
+        <h1 className="mt-5 text-2xl font-semibold leading-tight tracking-tight text-[#eee8da] sm:text-3xl"><MathProse content={paper.title} /></h1>
         <p className="mt-3 text-sm text-[#a5a297]">
           {paper.authorName} · {new Date(paper.createdAt).toLocaleDateString('zh-CN')}
         </p>

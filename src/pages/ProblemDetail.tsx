@@ -14,6 +14,7 @@ import {
 } from '@/lib/learning'
 import { useAuth } from '@/lib/auth'
 import { Markdown } from '@/components/Markdown'
+import { MathProse } from '@/components/reading/MathProse'
 import { AttachmentList } from '@/components/Attachments'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -93,9 +94,9 @@ export default function ProblemDetail() {
           <span className="text-[#929188]">{fmt(problem.createdAt)}</span>
         </div>
         <h1 className="mt-4 text-[1.8rem] font-semibold tracking-[-0.045em] text-[#f0e8d3] sm:text-[2.2rem]">
-          {problem.title}
+          <MathProse content={problem.title} />
         </h1>
-        <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#a8a59a]">{profile.summary}</p>
+        <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#a8a59a]"><MathProse content={profile.summary} /></p>
         <div className="mt-8 rounded-[5px] bg-[#181914]/80 px-5 py-5 ring-1 ring-white/[0.045] sm:px-8 sm:py-7">
           <Markdown content={problem.statement} />
           <AttachmentList items={problem.attachments} />
@@ -131,7 +132,7 @@ export default function ProblemDetail() {
                     {String(index + 1).padStart(2, '0')}
                   </span>
                   <div className="min-w-0 pt-0.5">
-                    <h3 className="text-[14px] font-medium text-[#e9e2d0]">{hint.title}</h3>
+                    <h3 className="text-[14px] font-medium text-[#e9e2d0]"><MathProse content={hint.title} /></h3>
                     <Markdown content={hint.content} className="mt-2 text-[13px]" />
                   </div>
                 </div>
@@ -155,8 +156,8 @@ export default function ProblemDetail() {
               <div className="mt-5 divide-y divide-white/[0.055]">
                 {articles.map((article) => (
                   <Link key={article.id} to={`/principles/${article.id}`} className="group flex items-start justify-between gap-4 py-4">
-                    <div><p className="text-[14px] font-medium text-[#ded9cc] group-hover:text-[#f0e8d3]">{article.title}</p>
-                      <p className="mt-1.5 text-[12px] leading-6 text-[#929188]">{article.summary}</p></div>
+                    <div><p className="text-[14px] font-medium text-[#ded9cc] group-hover:text-[#f0e8d3]"><MathProse content={article.title} /></p>
+                      <p className="mt-1.5 text-[12px] leading-6 text-[#929188]"><MathProse content={article.summary} /></p></div>
                     <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#9e8b65] group-hover:translate-x-1" />
                   </Link>
                 ))}
@@ -187,8 +188,8 @@ export default function ProblemDetail() {
               <div className="mt-4 divide-y divide-white/[0.055]">
                 {variants.map((variant) => (
                   <Link key={variant.id} to={`/problems/${variant.id}`} className="group flex items-center justify-between gap-3 py-4">
-                    <div><p className="text-[14px] text-[#ded9cc] group-hover:text-[#f0e8d3]">{variant.title}</p>
-                      <p className="mt-1 text-[12px] text-[#929188]">{getProblemLearningProfile(variant).summary}</p></div>
+                    <div><p className="text-[14px] text-[#ded9cc] group-hover:text-[#f0e8d3]"><MathProse content={variant.title} /></p>
+                      <p className="mt-1 text-[12px] text-[#929188]"><MathProse content={getProblemLearningProfile(variant).summary} /></p></div>
                     <ArrowRight className="h-4 w-4 shrink-0 text-[#9e8b65] group-hover:translate-x-1" />
                   </Link>
                 ))}
@@ -223,16 +224,16 @@ export default function ProblemDetail() {
             <p className="flex items-center gap-2 text-[12px] font-medium text-[#d7c08b]">
               <AlertTriangle className="h-4 w-4" /> 共同前置环节</p>
             {matchingGaps.slice(0, 2).map((gap) => <p key={gap.node.id} className="mt-2 text-[12px] leading-6 text-[#c9c3b4]">
-              「{gap.node.label}」出现在 {gap.problemIds.length} 道你标记卡住的题中；这是复习线索，不是诊断结论。</p>)}
+              「<MathProse content={gap.node.label} />」出现在 {gap.problemIds.length} 道你标记卡住的题中；这是复习线索，不是诊断结论。</p>)}
           </section>}
           <section><p className="text-[10px] font-medium tracking-[0.22em] text-[#b29b69]">CONCEPT LABS</p>
             <h2 className="mt-2 text-[16px] font-medium text-[#e9e2d0]">对应动态实验</h2>
             <div className="mt-3 space-y-3">{profile.labIds.map((labId) => {
               const lab = getLabMeta(labId)
               return <Link key={lab.id} to={lab.href} className="group block">
-                <span className="flex items-center justify-between gap-2 text-[13px] text-[#d3cec0]">{lab.label}
+                <span className="flex items-center justify-between gap-2 text-[13px] text-[#d3cec0]"><MathProse content={lab.label} />
                   <ArrowRight className="h-3.5 w-3.5 text-[#9e8b65] group-hover:translate-x-1" /></span>
-                <span className="mt-1 block text-[11px] leading-5 text-[#929188]">{lab.description}</span>
+                <span className="mt-1 block text-[11px] leading-5 text-[#929188]"><MathProse content={lab.description} /></span>
               </Link>
             })}</div>
           </section>
@@ -244,15 +245,15 @@ export default function ProblemDetail() {
 
 function SectionHeading({ id, eyebrow, title, description }: { id: string; eyebrow: string; title: string; description?: string }) {
   return <div><p className="text-[10px] font-medium tracking-[0.22em] text-[#b29b69]">{eyebrow}</p>
-    <h2 id={id} className="mt-2 text-[18px] font-medium tracking-[-0.025em] text-[#e9e2d0]">{title}</h2>
-    {description && <p className="mt-1.5 text-[12px] leading-6 text-[#929188]">{description}</p>}</div>
+    <h2 id={id} className="mt-2 text-[18px] font-medium tracking-[-0.025em] text-[#e9e2d0]"><MathProse content={title} /></h2>
+    {description && <p className="mt-1.5 text-[12px] leading-6 text-[#929188]"><MathProse content={description} /></p>}</div>
 }
 
 function PathCard({ icon, label, description, to }: { icon: ReactNode; label: string; description: string; to: string }) {
   const className = 'group min-w-0 bg-[#151613] px-5 py-5 transition-colors hover:bg-[#1a1b17]'
   const content = <><span className="text-[#c7ad70]">{icon}</span>
-    <span className="mt-3 block text-[13px] font-medium text-[#ded9cc]">{label}</span>
-    <span className="mt-1.5 block text-[11px] leading-5 text-[#929188]">{description}</span></>
+    <span className="mt-3 block text-[13px] font-medium text-[#ded9cc]"><MathProse content={label} /></span>
+    <span className="mt-1.5 block text-[11px] leading-5 text-[#929188]"><MathProse content={description} /></span></>
   return to.startsWith('#') ? <a href={to} className={className}>{content}</a> : <Link to={to} className={className}>{content}</Link>
 }
 
@@ -261,8 +262,8 @@ function KnowledgePath({ profile, onChange }: { profile: ProblemLearningProfile;
   return <ol className="mt-5 space-y-0">{nodes.map((knowledge, index) => <li key={knowledge.id} className="relative pb-5 pl-6 last:pb-0">
     {index < nodes.length - 1 && <span aria-hidden="true" className="absolute bottom-0 left-[5px] top-3 w-px bg-white/[0.11]" />}
     <span aria-hidden="true" className="absolute left-0 top-[6px] h-[11px] w-[11px] rounded-full border border-[#c7ad70]/60 bg-[#151613]" />
-    <p className="text-[13px] text-[#dfd9cb]">{knowledge.label}</p>
-    <p className="mt-1 text-[11px] leading-5 text-[#929188]">{knowledge.description}</p>
+    <p className="text-[13px] text-[#dfd9cb]"><MathProse content={knowledge.label} /></p>
+    <p className="mt-1 text-[11px] leading-5 text-[#929188]"><MathProse content={knowledge.description} /></p>
     <KnowledgeStatusPicker knowledge={knowledge} onChange={onChange} />
   </li>)}</ol>
 }
@@ -318,7 +319,7 @@ function SolutionCard({ index, solution, onChange }: {
   return <div className="rounded-[5px] bg-[#181914]/70 px-5 py-5 ring-1 ring-white/[0.05] sm:px-6 sm:py-6">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><p className="text-[10px] tracking-[0.18em] text-[#9b8962]">METHOD {String(index + 1).padStart(2, '0')}</p>
-        <p className="mt-1.5 text-[14px] font-medium text-[#e9e2d0]">{describeSolutionApproach(solution)}</p>
+        <p className="mt-1.5 text-[14px] font-medium text-[#e9e2d0]"><MathProse content={describeSolutionApproach(solution)} /></p>
         <p className="mt-1 text-[11px] text-[#96958d]">{solution.authorName} · {fmt(solution.createdAt)}</p></div>
       <div className="flex items-center gap-3">
         <span className={`inline-flex items-center gap-1 text-[11px] ${status === 'unreviewed' ? 'text-[#c6ab77]' : 'text-[#a9b89b]'}`}>
@@ -348,7 +349,7 @@ function SolutionCard({ index, solution, onChange }: {
       {proofComments.length > 0 && <div className="mt-5 space-y-3"><p className="text-[12px] font-medium text-[#ded9cc]">步骤疑点与讨论</p>
         {proofComments.map((comment) => <div key={comment.id} className="border-l border-[#c7ad70]/35 pl-3">
           <p className="text-[11px] text-[#96958d]">{comment.authorName} · {fmt(comment.createdAt)}</p>
-          <p className="mt-1 text-[12px] leading-6 text-[#d0cabe]">{comment.content}</p></div>)}</div>}
+          <p className="mt-1 text-[12px] leading-6 text-[#d0cabe]"><MathProse content={comment.content} /></p></div>)}</div>}
       <form onSubmit={submitConcern} className="mt-5"><Textarea value={concern} onChange={(event) => setConcern(event.target.value)} rows={3}
         placeholder={user ? '指出具体步骤、缺失条件或可能的反例…' : '登录后指出具体步骤或逻辑疑点'} className="text-[12px]" />
         <div className="mt-2 flex justify-end"><Button size="sm" type="submit" disabled={!concern.trim()}>记录步骤疑点</Button></div></form>
@@ -374,7 +375,7 @@ export function CommentThread({ targetId, comments, onPosted }: {
   return <div className="mt-5"><div className="space-y-5">
     {comments.map((comment) => <div key={comment.id} className="text-sm"><span className="font-medium text-[#ded9cc]">{comment.authorName}</span>
       <span className="ml-2 text-xs text-[#929188]">{fmt(comment.createdAt)}</span>
-      <p className="mt-1.5 leading-7 text-[#bdb9ad]">{comment.content}</p></div>)}
+      <p className="mt-1.5 leading-7 text-[#bdb9ad]"><MathProse content={comment.content} /></p></div>)}
     {comments.length === 0 && <p className="text-[13px] text-[#96958d]">还没有讨论，可以从一个具体条件或疑问开始。</p>}
   </div><form onSubmit={submit} className="mt-6"><Textarea value={text} onChange={(event) => setText(event.target.value)} rows={3}
     placeholder={user ? '写下你的想法…' : '登录后参与讨论'} />

@@ -15,7 +15,7 @@ export default function NewProblem() {
   const nav = useNavigate()
   const [title, setTitle] = useState('')
   const [statement, setStatement] = useState('')
-  const [chapter, setChapter] = useState<Chapter>('数学分析')
+  const [chapter, setChapter] = useState<Chapter>('函数')
   const [difficulty, setDifficulty] = useState<Difficulty>('基础')
   const [competition, setCompetition] = useState<Competition>('全国大学生数学竞赛')
   const [tags, setTags] = useState('')

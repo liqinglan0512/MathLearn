@@ -13,8 +13,16 @@ import {
   Sun,
 } from 'lucide-react'
 import { getArticleLearningProfile, getKnowledgeNodes, getLabMeta } from '@/lib/learning'
+import { getEuclidEntry } from '@/lib/euclid'
 import { store } from '@/lib/store'
-import { Markdown } from '@/components/Markdown'
+import { EuclidDiagram } from '@/components/geometry/EuclidDiagram'
+import {
+  EuclidDependencyGraph,
+  SemanticProofBlocks,
+} from '@/components/reading/EuclidProofStructure'
+import { MathProse } from '@/components/reading/MathProse'
+import { PassageAnnotations } from '@/components/reading/PassageAnnotations'
+import { describeEuclidEntry, getArticleReadingBlocks } from '@/lib/reading-blocks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CommentThread } from './ProblemDetail'
@@ -72,17 +80,24 @@ export default function ArticleDetail() {
     )
   }
 
+  const euclidEntry = getEuclidEntry(article.id)
+  const readingBlocks = getArticleReadingBlocks(article.id, article.content)
   const profile = getArticleLearningProfile(article)
-  const knowledgeNodes = getKnowledgeNodes(profile.knowledgeIds)
-  const relatedProblems = store.problems().filter((problem) => profile.problemIds.includes(problem.id))
-  const relatedLabs = profile.labIds.map((labId) => getLabMeta(labId))
+  const knowledgeNodes = euclidEntry ? [] : getKnowledgeNodes(profile.knowledgeIds)
+  const relatedProblems = euclidEntry ? [] : store.problems().filter((problem) => profile.problemIds.includes(problem.id))
+  const relatedLabs = euclidEntry ? [] : profile.labIds.map((labId) => getLabMeta(labId))
   const comments = store.comments().filter((comment) => comment.targetId === article.id)
   const paperMode = theme === 'paper'
-  const routes = article.content
-    .split('\n')
-    .filter((line) => /^#{1,3}\s/.test(line))
-    .map((line) => line.replace(/^#{1,3}\s+/, '').replace(/^\d+[.、]\s*/, ''))
-    .slice(0, 5)
+  const routes = euclidEntry
+    ? readingBlocks
+      .filter((block) => ['statement', 'definition', 'postulate', 'common-notion', 'construction', 'proof', 'conclusion'].includes(block.kind))
+      .map((block) => block.title)
+      .slice(0, 5)
+    : article.content
+      .split('\n')
+      .filter((line) => /^#{1,3}\s/.test(line))
+      .map((line) => line.replace(/^#{1,3}\s+/, '').replace(/^\d+[.、]\s*/, ''))
+      .slice(0, 5)
 
   function toggleTheme() {
     const nextTheme: ReaderTheme = paperMode ? 'dark' : 'paper'
@@ -136,10 +151,11 @@ export default function ArticleDetail() {
             <Badge variant="outline" className="border-current/20 text-current">
               {article.topic}
             </Badge>
+            {euclidEntry && <span>{describeEuclidEntry(euclidEntry)}</span>}
             <span>约 {estimateReadingMinutes(article.content)} 分钟阅读</span>
           </div>
           <h1 className="mt-6 text-[2rem] font-semibold leading-[1.3] tracking-tight sm:text-[2.75rem]">
-            {article.title}
+            <MathProse content={article.title} />
           </h1>
           <p className="mt-5 text-sm opacity-70">
             {article.authorName} · {new Date(article.createdAt).toLocaleDateString('zh-CN')}
@@ -147,7 +163,7 @@ export default function ArticleDetail() {
 
           <div className="mt-11 border-l border-[#c7ad70]/60 pl-5 sm:pl-7">
             <p className="text-[11px] uppercase tracking-[0.2em] text-[#a99361]">问题从哪里来</p>
-            <p className="mt-3 text-lg leading-8 sm:text-xl">{profile.framingQuestion}</p>
+            <p className="mt-3 text-lg leading-8 sm:text-xl"><MathProse content={profile.framingQuestion} /></p>
           </div>
         </header>
 
@@ -168,7 +184,7 @@ export default function ArticleDetail() {
               </button>
             ))}
           </div>
-          <p className="mt-5 text-[15px] leading-8 opacity-85">{profile.abstraction[level]}</p>
+          <p className="mt-5 text-[15px] leading-8 opacity-85"><MathProse content={profile.abstraction[level]} /></p>
         </section>
 
         {knowledgeNodes.length > 0 && (
@@ -177,7 +193,7 @@ export default function ArticleDetail() {
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
               {knowledgeNodes.map((node) => (
                 <span key={node.id} className="inline-flex items-center gap-1.5 text-sm opacity-80">
-                  <Check className="h-3.5 w-3.5 text-[#b8a06a]" /> {node.label}
+                  <Check className="h-3.5 w-3.5 text-[#b8a06a]" /> <MathProse content={node.label} />
                 </span>
               ))}
             </div>
@@ -189,15 +205,22 @@ export default function ArticleDetail() {
             {routes.map((route, index) => (
               <span key={route} className="inline-flex items-center gap-2">
                 {index > 0 && <ArrowRight className="h-3 w-3 text-[#b8a06a]" />}
-                <span>{route}</span>
+                <span><MathProse content={route} /></span>
               </span>
             ))}
           </div>
         )}
 
+        {/* EUCLID_DIAGRAM_SLOT: every Euclidean entry receives its own interactive construction. */}
+        <EuclidDiagram articleId={article.id} title={article.title} paperMode={paperMode} />
+
         <div className="math-reader-body mt-14 border-t border-current/10 pt-7 sm:mt-16 sm:pt-10">
-          <Markdown content={article.content} />
+          <PassageAnnotations key={article.id} articleId={article.id} paperMode={paperMode} blocks={readingBlocks}>
+            <SemanticProofBlocks blocks={readingBlocks} />
+          </PassageAnnotations>
         </div>
+
+        {euclidEntry && <EuclidDependencyGraph key={article.id} articleId={article.id} />}
 
         {profile.conditionChecks.length > 0 && (
           <section className="mt-14 border-l border-[#c7ad70]/55 pl-5 sm:pl-7" aria-label="条件核对">
@@ -206,13 +229,13 @@ export default function ArticleDetail() {
             </h2>
             <ul className="mt-4 space-y-2.5 text-sm leading-7 opacity-85">
               {profile.conditionChecks.map((condition) => (
-                <li key={condition}>{condition}</li>
+                <li key={condition}><MathProse content={condition} /></li>
               ))}
             </ul>
             {profile.counterexample && (
               <p className="mt-5 text-sm leading-7 opacity-80">
                 <span className="font-medium text-[#ab9360]">条件拿掉之后：</span>
-                {profile.counterexample}
+                <MathProse content={profile.counterexample} />
               </p>
             )}
           </section>
@@ -243,7 +266,7 @@ export default function ArticleDetail() {
                 >
                   <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-[#b8a06a]" />
                   <span>
-                    <span className="block text-sm font-medium">{problem.title}</span>
+                    <span className="block text-sm font-medium"><MathProse content={problem.title} /></span>
                     <span className="mt-1 block text-xs leading-6 opacity-70">回到题目，检验真正的理解</span>
                   </span>
                 </Link>

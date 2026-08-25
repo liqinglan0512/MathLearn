@@ -2,6 +2,7 @@ import { ArrowRight, BookOpen, Compass } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { ConceptLab } from '@/components/labs/ConceptLabs'
 import { FunctionPlotter } from '@/components/labs/FunctionPlotter'
+import { MathProse } from '@/components/reading/MathProse'
 import { MATH_LABS, getMathLab } from '@/lib/labs'
 
 export default function Viz() {
@@ -21,9 +22,9 @@ export default function Viz() {
           <Compass className="h-3.5 w-3.5" />数学概念实验室
         </p>
         <h1 className="mt-3 text-[1.8rem] font-semibold leading-tight tracking-[-0.045em] text-[#f0e8d3] sm:text-[2.4rem]">
-          {activeLab.title}
+          <MathProse content={activeLab.title} />
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-[#a9a69a] sm:text-[15px]">{activeLab.description}</p>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-[#a9a69a] sm:text-[15px]"><MathProse content={activeLab.description} /></p>
       </header>
 
       <nav
@@ -44,7 +45,7 @@ export default function Viz() {
                   : 'bg-white/[0.035] text-[#96968d] hover:bg-white/[0.065] hover:text-[#ded9cd]'
               }`}
             >
-              {lab.label}
+              <MathProse content={lab.label} />
             </button>
           )
         })}

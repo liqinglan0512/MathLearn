@@ -1,5 +1,6 @@
 import type { Article, Comment, Paper, Problem, Solution, User } from './types'
 import { seedArticles, seedPapers, seedProblems, seedSolutions, seedComments } from './seed'
+import { normalizeChapter } from './taxonomy'
 
 const KEYS = {
   problems: 'mf_problems',
@@ -13,14 +14,24 @@ const KEYS = {
 
 type Key = keyof typeof KEYS
 
+function normalizePersistedRecord<T extends { id: string }>(key: Key, value: T): T {
+  if (key !== 'problems') return value
+
+  const problem = value as unknown as Problem
+  const chapter = normalizeChapter(problem.chapter, problem.title, problem.tags)
+  return chapter === problem.chapter ? value : ({ ...problem, chapter } as unknown as T)
+}
+
 // 读取时同步种子条目（按 id 覆盖更新），并把新增种子合并进去，保证老访客也能看到新内容与修正
 function read<T extends { id: string }>(key: Key, seed: T[]): T[] {
   try {
     const raw = localStorage.getItem(KEYS[key])
     if (raw) {
       const existing = JSON.parse(raw) as T[]
-      const merged = existing.map((e) => seed.find((s) => s.id === e.id) ?? e)
-      const missing = seed.filter((s) => !existing.some((e) => e.id === s.id))
+      const bundledById = new Map(seed.map((entry) => [entry.id, entry]))
+      const existingIds = new Set(existing.map((entry) => entry.id))
+      const merged = existing.map((entry) => bundledById.get(entry.id) ?? normalizePersistedRecord(key, entry))
+      const missing = seed.filter((entry) => !existingIds.has(entry.id))
       const result = [...merged, ...missing]
       if (missing.length > 0 || JSON.stringify(result) !== raw) {
         localStorage.setItem(KEYS[key], JSON.stringify(result))
@@ -32,6 +43,49 @@ function read<T extends { id: string }>(key: Key, seed: T[]): T[] {
   }
   localStorage.setItem(KEYS[key], JSON.stringify(seed))
   return [...seed]
+}
+
+let cachedArticleStorage: string | null | undefined
+let cachedArticleResults: Article[] | undefined
+
+/**
+ * 内置典籍属于应用资源，不应再完整复制到浏览器 localStorage。
+ * 这里只持久化用户创建的文章，并自动迁移旧版本保存的内置文章副本。
+ */
+function readArticles(): Article[] {
+  const stored = localStorage.getItem(KEYS.articles)
+  if (stored === cachedArticleStorage && cachedArticleResults) return cachedArticleResults
+
+  let previous: Article[] = []
+  if (stored) {
+    try {
+      const parsed: unknown = JSON.parse(stored)
+      if (Array.isArray(parsed)) previous = parsed as Article[]
+    } catch {
+      previous = []
+    }
+  }
+
+  const bundledIds = new Set(seedArticles.map((article) => article.id))
+  const customArticles = previous
+    .filter((article) => !bundledIds.has(article.id))
+    .map((article) => {
+      const topic = normalizeChapter(article.topic, article.title)
+      return topic === article.topic ? article : { ...article, topic }
+    })
+
+  const compactStorage = JSON.stringify(customArticles)
+  if (stored !== compactStorage) {
+    try {
+      localStorage.setItem(KEYS.articles, compactStorage)
+    } catch {
+      // 内置典籍无需持久化；即使访客浏览器禁止写入，也仍可继续阅读。
+    }
+  }
+
+  cachedArticleStorage = localStorage.getItem(KEYS.articles)
+  cachedArticleResults = [...customArticles, ...seedArticles]
+  return cachedArticleResults
 }
 
 function write<T>(key: Key, value: T[]) {
@@ -50,7 +104,7 @@ export const store = {
   problems: () => read<Problem>('problems', seedProblems),
   solutions: () => read<Solution>('solutions', seedSolutions),
   comments: () => read<Comment>('comments', seedComments),
-  articles: () => read<Article>('articles', seedArticles),
+  articles: () => readArticles(),
   papers: () => read<Paper>('papers', seedPapers),
   users: () => read<User>('users', []),
 
@@ -64,7 +118,9 @@ export const store = {
     write('comments', [...store.comments(), c])
   },
   addArticle(a: Article) {
-    write('articles', [a, ...store.articles()])
+    const bundledIds = new Set(seedArticles.map((article) => article.id))
+    const customArticles = store.articles().filter((article) => !bundledIds.has(article.id))
+    write('articles', [a, ...customArticles])
   },
   addPaper(p: Paper) {
     write('papers', [p, ...store.papers()])

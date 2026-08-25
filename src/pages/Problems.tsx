@@ -11,6 +11,7 @@ import {
 } from '@/lib/learning'
 import { CHAPTERS, COMPETITIONS, DIFFICULTIES } from '@/lib/types'
 import { useAuth } from '@/lib/auth'
+import { MathProse } from '@/components/reading/MathProse'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -77,7 +78,7 @@ export default function Problems() {
         {knowledgeFilter && <div className="flex items-center gap-3">
           <span className="w-10 shrink-0 text-xs text-[#96958d]">知识</span>
           <button onClick={() => setKnowledgeFilter('')} className="rounded-full border border-[#c7ad70]/30 px-3 py-1 text-xs text-[#d8c79e]">
-            {getKnowledgeNode(knowledgeFilter)?.label ?? knowledgeFilter} ×</button>
+            <MathProse content={getKnowledgeNode(knowledgeFilter)?.label ?? knowledgeFilter} /> ×</button>
         </div>}
       </div>
 
@@ -98,11 +99,11 @@ export default function Problems() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-[16px] font-medium leading-snug tracking-[-0.02em] text-[#e8e1d1] group-hover:text-[#f2ead7]">
-                    {problem.title}</h2>
+                    <MathProse content={problem.title} /></h2>
                   {relatedGap && <span className="inline-flex items-center gap-1 text-[10px] text-[#d5b888]">
                     <ShieldAlert className="h-3 w-3" /> 共同薄弱环节</span>}
                 </div>
-                <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#aaa79d]">{profile.summary}</p>
+                <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#aaa79d]"><MathProse content={profile.summary} /></p>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
                   <Badge variant="outline" className="border-white/[0.09] text-[#b8b4a8]">{problem.chapter}</Badge>
                   <Badge variant="outline" className={DIFF_STYLE[problem.difficulty]}>{problem.difficulty}</Badge>
@@ -111,7 +112,7 @@ export default function Problems() {
                 {prerequisiteNodes.length > 0 && <div className="mt-3.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#929188]">
                   <GitBranch className="h-3.5 w-3.5 text-[#a58e5e]" />
                   {prerequisiteNodes.slice(0, 3).map((node, index) => <span key={node.id} className="inline-flex items-center gap-2">
-                    {index > 0 && <span className="text-[#65645e]">→</span>}{node.label}</span>)}
+                    {index > 0 && <span className="text-[#65645e]">→</span>}<MathProse content={node.label} /></span>)}
                   {prerequisiteNodes.length > 3 && <span className="text-[#77766f]">+{prerequisiteNodes.length - 3}</span>}
                 </div>}
               </div>
@@ -149,7 +150,7 @@ function KnowledgeSnapshot({ onChooseKnowledge }: { onChooseKnowledge: (id: stri
       <p className="text-[11px] text-[#bdb7aa]">以下前置知识出现在多道你标记卡住的题中，建议优先核对：</p>
       <div className="mt-2 flex flex-wrap gap-2">{gaps.slice(0, 4).map((gap) => <button key={gap.node.id}
         onClick={() => onChooseKnowledge(gap.node.id)} className="rounded-full border border-[#c7ad70]/25 px-2.5 py-1 text-[11px] text-[#d2bf95]">
-        {gap.node.label} · {gap.problemIds.length} 题</button>)}</div>
+        <MathProse content={gap.node.label} /> · {gap.problemIds.length} 题</button>)}</div>
     </div>}</>}
   </section>
 }

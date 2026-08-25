@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { ArrowRight, Check, CirclePause, CirclePlay, Clock3, RotateCcw } from 'lucide-react'
 import { Markdown } from '@/components/Markdown'
+import { MathProse } from '@/components/reading/MathProse'
 import { Button } from '@/components/ui/button'
 import {
   advanceExamClock,
@@ -183,7 +184,7 @@ export default function ExamWorkspace({ paper }: ExamWorkspaceProps) {
       <div className="mt-9 grid gap-10 lg:grid-cols-[minmax(0,1fr)_15rem]">
         <article className="min-w-0">
           <div className="flex items-center justify-between gap-4">
-            <h3 className="text-xl font-medium text-[#ece6d7]">{activeQuestion.title}</h3>
+            <h3 className="text-xl font-medium text-[#ece6d7]"><MathProse content={activeQuestion.title} /></h3>
             <span className="text-sm text-[#ac996e]">{questionScore(activeQuestion, session)} / {activeQuestion.points}</span>
           </div>
           <div className="mt-6">
@@ -214,7 +215,7 @@ export default function ExamWorkspace({ paper }: ExamWorkspaceProps) {
                       >
                         {checked && <Check className="h-3 w-3" />}
                       </span>
-                      <span className={checked ? 'text-[#ebe5d6]' : 'text-[#aaa79d]'}>{item.label}</span>
+                      <span className={checked ? 'text-[#ebe5d6]' : 'text-[#aaa79d]'}><MathProse content={item.label} /></span>
                     </span>
                     <span className="font-mono text-xs text-[#a99260]">{item.points} 分</span>
                   </button>
@@ -269,7 +270,7 @@ export default function ExamWorkspace({ paper }: ExamWorkspaceProps) {
                   const article = store.articles().find((item) => item.id === articleId)
                   return article ? (
                     <Link key={article.id} to={`/principles/${article.id}`} className="block text-xs leading-6 text-[#c7c1b4] hover:text-[#efe5cb]">
-                      {article.title}
+                      <MathProse content={article.title} />
                     </Link>
                   ) : null
                 })}
@@ -330,7 +331,7 @@ function ExamReview({
       <p className="text-[11px] uppercase tracking-[0.22em] text-[#ad986a]">复盘比总分更重要</p>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h3 className="text-xl font-medium text-[#ece6d7]">{paper.title}</h3>
+          <h3 className="text-xl font-medium text-[#ece6d7]"><MathProse content={paper.title} /></h3>
           <p className="mt-2 flex items-center gap-2 text-sm text-[#a5a297]">
             <Clock3 className="h-4 w-4" /> 总用时 {formatDuration(session.secondsByQuestion.reduce((total, value) => total + value, 0))}
           </p>
@@ -364,7 +365,7 @@ function ExamReview({
           <div className="mt-3 space-y-2">
             {recoveryProblems.map((problem) => (
               <Link key={problem.id} to={`/problems/${problem.id}`} className="flex items-center gap-2 text-sm text-[#baa474] hover:text-[#e7d6a7]">
-                {problem.title} <ArrowRight className="h-3.5 w-3.5" />
+                <MathProse content={problem.title} /> <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             ))}
           </div>

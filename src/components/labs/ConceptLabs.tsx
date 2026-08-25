@@ -17,6 +17,48 @@ import type { LabDraw } from '@/components/labs/canvasDrawing'
 const selectClassName =
   'h-10 w-full rounded-md border border-white/[0.09] bg-[#171813] px-3 text-sm text-[#e7e2d4] outline-none transition-colors focus:border-[#c7ad70]/55'
 
+type ElementaryFunctionId = 'exp' | 'log' | 'sin' | 'square'
+
+const ELEMENTARY_FUNCTIONS: Record<
+  ElementaryFunctionId,
+  {
+    label: string
+    expression: string
+    fn: (value: number) => number
+    derivative: (value: number) => number
+    primitive: (value: number) => number
+  }
+> = {
+  exp: {
+    label: 'f(x) = eˣ',
+    expression: 'eˣ',
+    fn: Math.exp,
+    derivative: Math.exp,
+    primitive: Math.exp,
+  },
+  log: {
+    label: 'f(x) = ln x',
+    expression: 'ln x',
+    fn: Math.log,
+    derivative: (value) => 1 / value,
+    primitive: (value) => value * Math.log(value) - value,
+  },
+  sin: {
+    label: 'f(x) = sin x',
+    expression: 'sin x',
+    fn: Math.sin,
+    derivative: Math.cos,
+    primitive: (value) => -Math.cos(value),
+  },
+  square: {
+    label: 'f(x) = x²',
+    expression: 'x²',
+    fn: (value) => value ** 2,
+    derivative: (value) => 2 * value,
+    primitive: (value) => value ** 3 / 3,
+  },
+}
+
 export function ConceptLab({ id }: { id: Exclude<LabId, 'plotter'> }) {
   switch (id) {
     case 'derivative':
@@ -35,7 +77,7 @@ export function ConceptLab({ id }: { id: Exclude<LabId, 'plotter'> }) {
 }
 
 function DerivativeLab() {
-  const [functionId, setFunctionId] = useState<'sin' | 'square' | 'exp'>('sin')
+  const [functionId, setFunctionId] = useState<ElementaryFunctionId>('sin')
   const [position, setPosition] = useState(0.8)
   const [increment, setIncrement] = useState(1.5)
   const [playing, setPlaying] = useState(false)
@@ -54,24 +96,22 @@ function DerivativeLab() {
     return () => window.clearInterval(timer)
   }, [playing])
 
-  const fn = (value: number) => {
-    if (functionId === 'square') return 0.42 * value ** 2
-    if (functionId === 'exp') return Math.exp(value * 0.55) - 1
-    return Math.sin(value)
-  }
-
-  const derivative = (value: number) => {
-    if (functionId === 'square') return 0.84 * value
-    if (functionId === 'exp') return 0.55 * Math.exp(value * 0.55)
-    return Math.cos(value)
-  }
-
+  const selected = ELEMENTARY_FUNCTIONS[functionId]
+  const { fn } = selected
   const secant = (fn(position + increment) - fn(position)) / increment
-  const tangent = derivative(position)
+  const tangent = selected.derivative(position)
+  const yMax = Math.max(
+    functionId === 'sin' ? 2.1 : functionId === 'log' ? 3.2 : 5.2,
+    fn(position) * 1.18,
+    fn(position + increment) * 1.18,
+  )
 
   const draw: LabDraw = (context, viewport) => {
     drawGrid(context, viewport)
-    plotCurve(context, viewport, fn, LAB_COLORS.ivory, { lineWidth: 2.35 })
+    plotCurve(context, viewport, fn, LAB_COLORS.ivory, {
+      lineWidth: 2.35,
+      domain: functionId === 'log' ? [0.035, viewport.xMax] : undefined,
+    })
     plotCurve(
       context,
       viewport,
@@ -105,16 +145,14 @@ function DerivativeLab() {
     context.fillText('h', viewport.x(position + increment / 2), viewport.y(fn(position)) + 18)
   }
 
-  const expression = functionId === 'square' ? '0.42x²' : functionId === 'exp' ? 'e^(0.55x) − 1' : 'sin x'
-
   return (
     <ExperimentLayout
       canvas={
         <LabCanvas
           label="导数实验：函数曲线、割线与切线"
           draw={draw}
-          xRange={[-4, 4]}
-          yRange={[-2.8, 4.7]}
+          xRange={functionId === 'log' ? [-0.7, 4.7] : [-3.5, 4.7]}
+          yRange={[functionId === 'log' ? -3.4 : functionId === 'sin' ? -2.1 : -1.5, yMax]}
         />
       }
       legend={[
@@ -131,15 +169,19 @@ function DerivativeLab() {
         <select
           aria-label="导数实验函数"
           value={functionId}
-          onChange={(event) => setFunctionId(event.target.value as typeof functionId)}
+          onChange={(event) => {
+            const next = event.target.value as ElementaryFunctionId
+            setFunctionId(next)
+            if (next === 'log' && position <= 0) setPosition(0.8)
+          }}
           className={selectClassName}
         >
-          <option value="sin">f(x) = sin x</option>
-          <option value="square">f(x) = 0.42x²</option>
-          <option value="exp">f(x) = e^(0.55x) − 1</option>
+          {(Object.entries(ELEMENTARY_FUNCTIONS) as [ElementaryFunctionId, (typeof ELEMENTARY_FUNCTIONS)[ElementaryFunctionId]][]).map(
+            ([id, entry]) => <option key={id} value={id}>{entry.label}</option>,
+          )}
         </select>
       </label>
-      <ParameterControl label="观察点 x₀" value={position} min={-2} max={2} step={0.05} onChange={setPosition} reset={0.8} />
+      <ParameterControl label="观察点 x₀" value={position} min={functionId === 'log' ? 0.1 : -2} max={2} step={0.05} onChange={setPosition} reset={0.8} />
       <ParameterControl label="增量 h" value={increment} min={0.02} max={2.6} step={0.01} onChange={setIncrement} reset={1.5} />
       <button
         type="button"
@@ -153,39 +195,43 @@ function DerivativeLab() {
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         {playing ? '暂停逼近' : '自动让 h → 0'}
       </button>
-      <Readout label="当前函数" value={expression} />
+      <Readout label="当前函数" value={selected.expression} />
       <Readout label="割线斜率" value={formatNumber(secant, 5)} />
       <Readout label="切线斜率 f′(x₀)" value={formatNumber(tangent, 5)} />
       <Readout label="斜率误差" value={formatNumber(Math.abs(secant - tangent), 6)} accent />
+      {functionId === 'log' && (
+        <p className="text-xs leading-6 text-[#85867d]">ln x 只在 x &gt; 0 上有定义，因此观察点与割线端点均保持在正半轴。</p>
+      )}
     </ExperimentLayout>
   )
 }
 
 function IntegralLab() {
   const [count, setCount] = useState(8)
+  const [lower, setLower] = useState(0)
   const [upper, setUpper] = useState(3.2)
   const [sampling, setSampling] = useState<'left' | 'midpoint' | 'right'>('midpoint')
-  const [functionId, setFunctionId] = useState<'quadratic' | 'wave'>('quadratic')
+  const [functionId, setFunctionId] = useState<ElementaryFunctionId>('square')
 
-  const fn = (value: number) =>
-    functionId === 'quadratic' ? 0.35 * value ** 2 + 0.65 : 1 + 0.55 * Math.sin(1.4 * value)
-  const exact =
-    functionId === 'quadratic'
-      ? (0.35 * upper ** 3) / 3 + 0.65 * upper
-      : upper + (0.55 * (1 - Math.cos(1.4 * upper))) / 1.4
-  const width = upper / count
+  const selected = ELEMENTARY_FUNCTIONS[functionId]
+  const { fn } = selected
+  const exact = selected.primitive(upper) - selected.primitive(lower)
+  const width = (upper - lower) / count
   const offset = sampling === 'left' ? 0 : sampling === 'right' ? 1 : 0.5
-  const approximation = Array.from({ length: count }, (_, index) => fn((index + offset) * width) * width).reduce(
+  const approximation = Array.from({ length: count }, (_, index) => fn(lower + (index + offset) * width) * width).reduce(
     (sum, area) => sum + area,
     0,
   )
+  const sampledHeights = Array.from({ length: 81 }, (_, index) => fn(lower + ((upper - lower) * index) / 80))
+  const yMax = Math.max(2, ...sampledHeights) * 1.16
+  const yMin = Math.min(-0.75, ...sampledHeights) * 1.18
 
   const draw: LabDraw = (context, viewport) => {
     drawGrid(context, viewport)
 
     for (let index = 0; index < count; index++) {
-      const left = index * width
-      const sample = (index + offset) * width
+      const left = lower + index * width
+      const sample = lower + (index + offset) * width
       const height = fn(sample)
       const px = viewport.x(left)
       const rectangleWidth = viewport.x(left + width) - px
@@ -198,31 +244,47 @@ function IntegralLab() {
       if (count <= 24) drawPoint(context, viewport, sample, height, LAB_COLORS.gold, 3.2)
     }
 
-    plotCurve(context, viewport, fn, LAB_COLORS.ivory, { lineWidth: 2.3 })
+    plotCurve(context, viewport, fn, LAB_COLORS.ivory, {
+      lineWidth: 2.3,
+      domain: functionId === 'log' ? [0.035, viewport.xMax] : undefined,
+    })
+    drawPoint(context, viewport, lower, 0, LAB_COLORS.sage, 4)
     drawPoint(context, viewport, upper, 0, LAB_COLORS.sage, 4)
   }
 
   return (
     <ExperimentLayout
-      canvas={<LabCanvas label="积分实验：曲线下方的黎曼矩形" draw={draw} xRange={[-0.7, 5]} yRange={[-0.75, 7]} />}
+      canvas={<LabCanvas label="积分实验：带符号的黎曼矩形与精确积分" draw={draw} xRange={[Math.min(-0.7, lower - 0.65), 5]} yRange={[yMin, yMax]} />}
       legend={[
         [LAB_COLORS.ivory, '函数曲线'],
         [LAB_COLORS.gold, '取样矩形'],
-        [LAB_COLORS.sage, '积分上界'],
+        [LAB_COLORS.sage, '积分上下界'],
       ]}
       formula={String.raw`$$\sum_{i=1}^{n} f(\xi_i)\,\Delta x\xrightarrow[n\to\infty]{}\int_a^b f(x)\,dx.$$`}
-      observation="积分不是记住一个求面积公式，而是先把连续区域分割成能够相加的小量。"
+      observation="定积分由带符号的小矩形累加得到：曲线在横轴上方贡献正面积，在横轴下方贡献负面积。"
     >
       <ControlHeading label="实验参数" />
       <label className="block space-y-2 text-sm text-[#c9c5b9]">
         <span>被积函数</span>
-        <select aria-label="积分实验函数" value={functionId} onChange={(event) => setFunctionId(event.target.value as typeof functionId)} className={selectClassName}>
-          <option value="quadratic">f(x) = 0.35x² + 0.65</option>
-          <option value="wave">f(x) = 1 + 0.55sin(1.4x)</option>
+        <select
+          aria-label="积分实验函数"
+          value={functionId}
+          onChange={(event) => {
+            const next = event.target.value as ElementaryFunctionId
+            setFunctionId(next)
+            if (next === 'log' && lower <= 0) setLower(0.2)
+            else if (functionId === 'log' && next !== 'log') setLower(0)
+          }}
+          className={selectClassName}
+        >
+          {(Object.entries(ELEMENTARY_FUNCTIONS) as [ElementaryFunctionId, (typeof ELEMENTARY_FUNCTIONS)[ElementaryFunctionId]][]).map(
+            ([id, entry]) => <option key={id} value={id}>{entry.label}</option>,
+          )}
         </select>
       </label>
       <ParameterControl label="分割数 n" value={count} min={1} max={80} step={1} onChange={(value) => setCount(Math.round(value))} reset={8} />
-      <ParameterControl label="积分上界 b" value={upper} min={0.6} max={4.5} step={0.05} onChange={setUpper} reset={3.2} />
+      <ParameterControl label="积分下界 a" value={lower} min={functionId === 'log' ? 0.05 : -2} max={upper - 0.1} step={0.05} onChange={setLower} reset={functionId === 'log' ? 0.2 : 0} />
+      <ParameterControl label="积分上界 b" value={upper} min={Math.max(0.15, lower + 0.1)} max={4.5} step={0.05} onChange={setUpper} reset={3.2} />
       <fieldset className="space-y-2">
         <legend className="text-sm text-[#c9c5b9]">取样位置</legend>
         <div className="grid grid-cols-3 gap-1.5">
@@ -248,16 +310,29 @@ function IntegralLab() {
       <Readout label="黎曼和" value={formatNumber(approximation, 6)} />
       <Readout label="精确积分" value={formatNumber(exact, 6)} />
       <Readout label="近似误差" value={formatNumber(Math.abs(approximation - exact), 7)} accent />
+      {functionId === 'log' && (
+        <p className="text-xs leading-6 text-[#85867d]">为避免端点取样落在 ln x 的定义域之外，积分下界始终大于 0。</p>
+      )}
     </ExperimentLayout>
   )
 }
 
 function LinearLab() {
   const [matrix, setMatrix] = useState({ a: 1.25, b: 0.7, c: 0.25, d: 0.9 })
+  const [coordinates, setCoordinates] = useState<'cartesian' | 'polar'>('cartesian')
+  const [angle, setAngle] = useState(Math.PI / 4)
   const determinant = matrix.a * matrix.d - matrix.b * matrix.c
   const trace = matrix.a + matrix.d
   const discriminant = trace ** 2 - 4 * determinant
   const eigenvalues = discriminant >= 0 ? [(trace + Math.sqrt(discriminant)) / 2, (trace - Math.sqrt(discriminant)) / 2] : []
+  const transform = (pointX: number, pointY: number): [number, number] => [
+    matrix.a * pointX + matrix.b * pointY,
+    matrix.c * pointX + matrix.d * pointY,
+  ]
+  const unitVector: [number, number] = [Math.cos(angle), Math.sin(angle)]
+  const mappedUnitVector = transform(...unitVector)
+  const transformedRadius = Math.hypot(...mappedUnitVector)
+  const transformedAngle = Math.atan2(mappedUnitVector[1], mappedUnitVector[0])
 
   function eigenvector(value: number): [number, number] {
     if (Math.abs(matrix.b) > 0.001) return normalize([matrix.b, value - matrix.a])
@@ -267,45 +342,105 @@ function LinearLab() {
 
   const draw: LabDraw = (context, viewport) => {
     drawGrid(context, viewport, { step: 1 })
-    const transform = (pointX: number, pointY: number): [number, number] => [
-      matrix.a * pointX + matrix.b * pointY,
-      matrix.c * pointX + matrix.d * pointY,
-    ]
 
-    context.strokeStyle = 'rgba(136, 170, 160, 0.33)'
-    context.lineWidth = 1
+    if (coordinates === 'cartesian') {
+      context.strokeStyle = 'rgba(136, 170, 160, 0.33)'
+      context.lineWidth = 1
 
-    for (let line = -4; line <= 4; line++) {
-      const [horizontalStartX, horizontalStartY] = transform(-4, line)
-      const [horizontalEndX, horizontalEndY] = transform(4, line)
-      const [verticalStartX, verticalStartY] = transform(line, -4)
-      const [verticalEndX, verticalEndY] = transform(line, 4)
+      for (let line = -4; line <= 4; line++) {
+        const [horizontalStartX, horizontalStartY] = transform(-4, line)
+        const [horizontalEndX, horizontalEndY] = transform(4, line)
+        const [verticalStartX, verticalStartY] = transform(line, -4)
+        const [verticalEndX, verticalEndY] = transform(line, 4)
+        context.beginPath()
+        context.moveTo(viewport.x(horizontalStartX), viewport.y(horizontalStartY))
+        context.lineTo(viewport.x(horizontalEndX), viewport.y(horizontalEndY))
+        context.moveTo(viewport.x(verticalStartX), viewport.y(verticalStartY))
+        context.lineTo(viewport.x(verticalEndX), viewport.y(verticalEndY))
+        context.stroke()
+      }
+
+      context.save()
+      context.setLineDash([5, 5])
+      context.strokeStyle = 'rgba(238, 232, 217, 0.5)'
+      context.strokeRect(viewport.x(0), viewport.y(1), viewport.x(1) - viewport.x(0), viewport.y(0) - viewport.y(1))
+      context.restore()
+
+      const corners = [transform(0, 0), transform(1, 0), transform(1, 1), transform(0, 1)]
+      context.fillStyle = LAB_COLORS.goldSoft
+      context.strokeStyle = LAB_COLORS.gold
+      context.lineWidth = 1.75
       context.beginPath()
-      context.moveTo(viewport.x(horizontalStartX), viewport.y(horizontalStartY))
-      context.lineTo(viewport.x(horizontalEndX), viewport.y(horizontalEndY))
-      context.moveTo(viewport.x(verticalStartX), viewport.y(verticalStartY))
-      context.lineTo(viewport.x(verticalEndX), viewport.y(verticalEndY))
+      corners.forEach(([pointX, pointY], index) => {
+        if (index === 0) context.moveTo(viewport.x(pointX), viewport.y(pointY))
+        else context.lineTo(viewport.x(pointX), viewport.y(pointY))
+      })
+      context.closePath()
+      context.fill()
       context.stroke()
+    } else {
+      const tracePolarCurve = (radius: number, mapped: boolean) => {
+        context.beginPath()
+        for (let index = 0; index <= 240; index++) {
+          const theta = (Math.PI * 2 * index) / 240
+          const sourceX = radius * Math.cos(theta)
+          const sourceY = radius * Math.sin(theta)
+          const [pointX, pointY] = mapped ? transform(sourceX, sourceY) : [sourceX, sourceY]
+          if (index === 0) context.moveTo(viewport.x(pointX), viewport.y(pointY))
+          else context.lineTo(viewport.x(pointX), viewport.y(pointY))
+        }
+        context.closePath()
+      }
+
+      context.save()
+      context.setLineDash([4, 5])
+      context.strokeStyle = 'rgba(238, 232, 217, 0.38)'
+      context.lineWidth = 1.25
+      tracePolarCurve(1, false)
+      context.stroke()
+      context.restore()
+
+      context.strokeStyle = 'rgba(136, 170, 160, 0.34)'
+      context.lineWidth = 1
+      for (const radius of [0.5, 1.5, 2, 2.5]) {
+        tracePolarCurve(radius, true)
+        context.stroke()
+      }
+
+      for (let index = 0; index < 16; index++) {
+        const theta = (Math.PI * 2 * index) / 16
+        const [endX, endY] = transform(2.7 * Math.cos(theta), 2.7 * Math.sin(theta))
+        context.beginPath()
+        context.moveTo(viewport.x(0), viewport.y(0))
+        context.lineTo(viewport.x(endX), viewport.y(endY))
+        context.stroke()
+      }
+
+      context.strokeStyle = LAB_COLORS.gold
+      context.lineWidth = 2.15
+      tracePolarCurve(1, true)
+      context.stroke()
+
+      drawArrow(
+        context,
+        viewport.x(0),
+        viewport.y(0),
+        viewport.x(unitVector[0]),
+        viewport.y(unitVector[1]),
+        'rgba(238, 232, 217, 0.82)',
+        1.75,
+      )
+      drawArrow(
+        context,
+        viewport.x(0),
+        viewport.y(0),
+        viewport.x(mappedUnitVector[0]),
+        viewport.y(mappedUnitVector[1]),
+        LAB_COLORS.gold,
+        2.45,
+      )
+      drawPoint(context, viewport, mappedUnitVector[0], mappedUnitVector[1], LAB_COLORS.gold, 4.4)
     }
-
-    context.save()
-    context.setLineDash([5, 5])
-    context.strokeStyle = 'rgba(238, 232, 217, 0.5)'
-    context.strokeRect(viewport.x(0), viewport.y(1), viewport.x(1) - viewport.x(0), viewport.y(0) - viewport.y(1))
-    context.restore()
-
-    const corners = [transform(0, 0), transform(1, 0), transform(1, 1), transform(0, 1)]
-    context.fillStyle = LAB_COLORS.goldSoft
-    context.strokeStyle = LAB_COLORS.gold
-    context.lineWidth = 1.75
-    context.beginPath()
-    corners.forEach(([pointX, pointY], index) => {
-      if (index === 0) context.moveTo(viewport.x(pointX), viewport.y(pointY))
-      else context.lineTo(viewport.x(pointX), viewport.y(pointY))
-    })
-    context.closePath()
-    context.fill()
-    context.stroke()
 
     const uniqueEigenvalues = eigenvalues.filter((value, index) => index === 0 || Math.abs(value - eigenvalues[0]) > 0.01)
     for (const value of uniqueEigenvalues) {
@@ -321,26 +456,59 @@ function LinearLab() {
       context.restore()
     }
 
-    const originX = viewport.x(0)
-    const originY = viewport.y(0)
-    drawArrow(context, originX, originY, viewport.x(matrix.a), viewport.y(matrix.c), LAB_COLORS.ivory, 2.1)
-    drawArrow(context, originX, originY, viewport.x(matrix.b), viewport.y(matrix.d), LAB_COLORS.sage, 2.1)
+    if (coordinates === 'cartesian') {
+      const originX = viewport.x(0)
+      const originY = viewport.y(0)
+      drawArrow(context, originX, originY, viewport.x(matrix.a), viewport.y(matrix.c), LAB_COLORS.ivory, 2.1)
+      drawArrow(context, originX, originY, viewport.x(matrix.b), viewport.y(matrix.d), LAB_COLORS.sage, 2.1)
+    }
   }
 
   const orientation = Math.abs(determinant) < 0.001 ? '降维：面积压缩为 0' : determinant < 0 ? '翻转方向' : '保持方向'
 
   return (
     <ExperimentLayout
-      canvas={<LabCanvas label="线性变换实验：矩阵作用下的平面网格与面积" draw={draw} xRange={[-4, 4]} yRange={[-3.2, 3.2]} />}
-      legend={[
-        [LAB_COLORS.gold, '变换后的单位正方形'],
-        [LAB_COLORS.sage, '变换后的网格'],
-        [LAB_COLORS.clay, '实特征方向'],
-      ]}
-      formula={String.raw`$$A\mathbf x=\begin{pmatrix}a&b\\c&d\end{pmatrix}\mathbf x,\qquad\det A=ad-bc.$$`}
-      observation="矩阵不是四个孤立数字：它同时规定整张平面怎样伸缩、剪切、翻转或降维。"
+      canvas={<LabCanvas label={coordinates === 'polar' ? '线性变换实验：极坐标单位圆及其椭圆像' : '线性变换实验：矩阵作用下的平面网格与面积'} draw={draw} xRange={[-4, 4]} yRange={[-3.2, 3.2]} />}
+      legend={coordinates === 'polar'
+        ? [
+            [LAB_COLORS.ivory, '原始极坐标单位圆'],
+            [LAB_COLORS.gold, '单位圆在线性变换下的像'],
+            [LAB_COLORS.sage, '变换后的极坐标网格'],
+          ]
+        : [
+            [LAB_COLORS.gold, '变换后的单位正方形'],
+            [LAB_COLORS.sage, '变换后的网格'],
+            [LAB_COLORS.clay, '实特征方向'],
+          ]}
+      formula={coordinates === 'polar'
+        ? String.raw`$$\mathbf u(\theta)=\begin{pmatrix}\cos\theta\\\sin\theta\end{pmatrix},\qquad A\mathbf u(\theta)=\begin{pmatrix}a\cos\theta+b\sin\theta\\c\cos\theta+d\sin\theta\end{pmatrix}.$$`
+        : String.raw`$$A\mathbf x=\begin{pmatrix}a&b\\c&d\end{pmatrix}\mathbf x,\qquad\det A=ad-bc.$$`}
+      observation={coordinates === 'polar'
+        ? '极坐标中的每一个单位方向都可以写成 (cos θ, sin θ)。矩阵把单位圆送到一个椭圆；退化时，这个椭圆压扁成线段或一点。'
+        : '矩阵不是四个孤立数字：它同时规定整张平面怎样伸缩、剪切、翻转或降维。'}
     >
       <ControlHeading label="矩阵元素" />
+      <fieldset className="space-y-2">
+        <legend className="text-sm text-[#c9c5b9]">坐标观察方式</legend>
+        <div className="grid grid-cols-2 gap-1.5">
+          {([
+            ['cartesian', '直角坐标网格'],
+            ['polar', '极坐标单位圆'],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={coordinates === value}
+              onClick={() => setCoordinates(value)}
+              className={`rounded-md px-1 py-2 text-xs transition-colors ${
+                coordinates === value ? 'bg-[#c7ad70]/15 text-[#e2cb96]' : 'bg-white/[0.035] text-[#96978e] hover:text-[#ded9cc]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <div aria-label="当前矩阵" className="mx-auto grid w-fit grid-cols-2 gap-x-7 gap-y-2 border-x border-[#c7ad70]/40 px-5 py-1 font-mono text-base text-[#eee8d9]">
         <span>{formatNumber(matrix.a, 2)}</span>
         <span>{formatNumber(matrix.b, 2)}</span>
@@ -359,6 +527,9 @@ function LinearLab() {
           reset={key === 'a' ? 1 : key === 'd' ? 1 : 0}
         />
       ))}
+      {coordinates === 'polar' && (
+        <ParameterControl label="单位向量角度 θ" value={angle} min={0} max={Math.PI * 2} step={0.01} onChange={setAngle} reset={Math.PI / 4} />
+      )}
       <button
         type="button"
         onClick={() => setMatrix({ a: 1, b: 0, c: 0, d: 1 })}
@@ -368,6 +539,13 @@ function LinearLab() {
       </button>
       <Readout label="行列式 det A" value={formatNumber(determinant, 4)} accent />
       <Readout label="面积伸缩倍数" value={formatNumber(Math.abs(determinant), 4)} />
+      {coordinates === 'polar' && (
+        <>
+          <Readout label="原始极角 θ" value={`${formatNumber((angle * 180) / Math.PI, 1)}°`} />
+          <Readout label="变换后的半径 ρ" value={formatNumber(transformedRadius, 4)} />
+          <Readout label="变换后的极角 φ" value={`${formatNumber((transformedAngle * 180) / Math.PI, 1)}°`} />
+        </>
+      )}
       <Readout label="平面方向" value={orientation} />
       <Readout
         label="实特征值"
@@ -511,24 +689,150 @@ function ProbabilityLab() {
   )
 }
 
+type DifferentialEquationId =
+  | 'growth'
+  | 'decay'
+  | 'logistic'
+  | 'relaxation'
+  | 'forced'
+  | 'quadratic'
+  | 'oscillator'
+
+const DIFFERENTIAL_EQUATIONS: Record<
+  DifferentialEquationId,
+  { label: string; formula: string; explanation: string }
+> = {
+  growth: {
+    label: '指数增长：y′ = ry',
+    formula: String.raw`$$y'=ry,\qquad y(t)=y_0e^{rt}.$$`,
+    explanation: '变化率始终与当前数量成正比；当 r > 0 时，零解是不稳定平衡点。',
+  },
+  decay: {
+    label: '指数衰减：y′ = −ry',
+    formula: String.raw`$$y'=-ry,\qquad y(t)=y_0e^{-rt}.$$`,
+    explanation: '数量按与自身成正比的速度衰减；所有解都以指数速度趋向稳定平衡 y = 0。',
+  },
+  logistic: {
+    label: 'Logistic 增长：y′ = ry(1−y/K)',
+    formula: String.raw`$$y'=ry\left(1-\frac{y}{K}\right),\qquad y(t)=\frac{K}{1+(K/y_0-1)e^{-rt}}.$$`,
+    explanation: '环境容量 K 抑制无限增长；正初值解趋向稳定平衡 y = K，而 y = 0 是不稳定平衡。',
+  },
+  relaxation: {
+    label: '线性回复：y′ = r(K−y)',
+    formula: String.raw`$$y'=r(K-y),\qquad y(t)=K+(y_0-K)e^{-rt}.$$`,
+    explanation: '牛顿冷却与误差反馈都具有这种形式：系统以指数速度回到目标状态 K。',
+  },
+  forced: {
+    label: '周期受迫：y′ + ry = sin(ωt)',
+    formula: String.raw`$$y'+ry=\sin(\omega t),\qquad y_{\mathrm p}(t)=\frac{r\sin(\omega t)-\omega\cos(\omega t)}{r^2+\omega^2}.$$`,
+    explanation: '周期外力使方向场随时间改变；初值差异指数衰减，但长期解保持受迫振荡。',
+  },
+  quadratic: {
+    label: '二次衰减：y′ = −ry²',
+    formula: String.raw`$$y'=-ry^2,\qquad y(t)=\frac{y_0}{1+ry_0t}\quad(y_0>0).$$`,
+    explanation: '这是可分离变量方程；正初值解只按代数速度趋向 0，与指数衰减有本质差别。',
+  },
+  oscillator: {
+    label: '二阶阻尼振子：y″ + 2ζωy′ + ω²y = 0',
+    formula: String.raw`$$y''+2\zeta\omega y'+\omega^2y=0,\qquad \begin{cases}y'=v,\\v'=-\omega^2y-2\zeta\omega v.\end{cases}$$`,
+    explanation: '二阶方程需要位置与速度共同决定未来；相平面中的轨道清楚区分欠阻尼、临界阻尼与过阻尼。',
+  },
+}
+
 function DirectionFieldLab() {
+  const [equationId, setEquationId] = useState<DifferentialEquationId>('logistic')
   const [growth, setGrowth] = useState(1)
   const [initial, setInitial] = useState(0.55)
-  const carryingCapacity = 2
-  const slope = (value: number) => growth * value * (1 - value / carryingCapacity)
+  const [capacity, setCapacity] = useState(2)
+  const [frequency, setFrequency] = useState(1)
+  const [damping, setDamping] = useState(0.3)
+  const [initialVelocity, setInitialVelocity] = useState(0.2)
+  const selected = DIFFERENTIAL_EQUATIONS[equationId]
+  const phasePortrait = equationId === 'oscillator'
+  const positiveInitialOnly = equationId === 'logistic' || equationId === 'quadratic'
 
-  const solution = (time: number, initialValue: number) =>
-    carryingCapacity / (1 + (carryingCapacity / initialValue - 1) * Math.exp(-growth * time))
+  const slope = (time: number, value: number) => {
+    switch (equationId) {
+      case 'growth': return growth * value
+      case 'decay': return -growth * value
+      case 'logistic': return growth * value * (1 - value / capacity)
+      case 'relaxation': return growth * (capacity - value)
+      case 'forced': return -growth * value + Math.sin(frequency * time)
+      case 'quadratic': return -growth * value ** 2
+      case 'oscillator': return 0
+    }
+  }
+
+  const solution = (time: number, initialValue: number) => {
+    switch (equationId) {
+      case 'growth': return initialValue * Math.exp(growth * time)
+      case 'decay': return initialValue * Math.exp(-growth * time)
+      case 'logistic':
+        return capacity / (1 + (capacity / initialValue - 1) * Math.exp(-growth * time))
+      case 'relaxation': return capacity + (initialValue - capacity) * Math.exp(-growth * time)
+      case 'forced': {
+        const denominator = growth ** 2 + frequency ** 2
+        const particular = (growth * Math.sin(frequency * time) - frequency * Math.cos(frequency * time)) / denominator
+        return particular + (initialValue + frequency / denominator) * Math.exp(-growth * time)
+      }
+      case 'quadratic': return initialValue / (1 + growth * initialValue * time)
+      case 'oscillator': return oscillatorState(time, initialValue, initialVelocity, frequency, damping)[0]
+    }
+  }
 
   const draw: LabDraw = (context, viewport) => {
     drawGrid(context, viewport)
+
+    if (phasePortrait) {
+      for (let position = -3; position <= 3.001; position += 0.42) {
+        for (let velocity = -3; velocity <= 3.001; velocity += 0.38) {
+          const vectorX = velocity
+          const vectorY = -(frequency ** 2) * position - 2 * damping * frequency * velocity
+          const screenX = (vectorX * viewport.width) / (viewport.xMax - viewport.xMin)
+          const screenY = (-vectorY * viewport.height) / (viewport.yMax - viewport.yMin)
+          const length = Math.hypot(screenX, screenY)
+          if (length < 0.001) continue
+          const halfLength = 6.6
+          const centerX = viewport.x(position)
+          const centerY = viewport.y(velocity)
+          context.strokeStyle = 'rgba(209, 183, 125, 0.34)'
+          context.lineWidth = 1.05
+          context.beginPath()
+          context.moveTo(centerX - (screenX / length) * halfLength, centerY - (screenY / length) * halfLength)
+          context.lineTo(centerX + (screenX / length) * halfLength, centerY + (screenY / length) * halfLength)
+          context.stroke()
+        }
+      }
+
+      const drawOrbit = (startPosition: number, startVelocity: number, color: string, lineWidth: number) => {
+        context.strokeStyle = color
+        context.lineWidth = lineWidth
+        context.beginPath()
+        for (let index = 0; index <= 320; index++) {
+          const [position, velocity] = oscillatorState((index / 320) * 10, startPosition, startVelocity, frequency, damping)
+          if (index === 0) context.moveTo(viewport.x(position), viewport.y(velocity))
+          else context.lineTo(viewport.x(position), viewport.y(velocity))
+        }
+        context.stroke()
+      }
+
+      for (const [position, velocity] of [[2.5, 0], [-2.3, 0], [0, 2], [0.8, -1.9]] as const) {
+        drawOrbit(position, velocity, 'rgba(238, 232, 217, 0.24)', 1.3)
+      }
+      drawOrbit(initial, initialVelocity, LAB_COLORS.gold, 2.4)
+      drawPoint(context, viewport, 0, 0, LAB_COLORS.sage, 4)
+      drawPoint(context, viewport, initial, initialVelocity, LAB_COLORS.gold, 5)
+      return
+    }
+
     const scaleRatio = ((viewport.height / (viewport.yMax - viewport.yMin)) / viewport.width) *
       (viewport.xMax - viewport.xMin)
 
     for (let time = 0; time <= 5.4; time += 0.42) {
-      for (let height = 0; height <= 3.5; height += 0.29) {
-        const angle = Math.atan(slope(height) * scaleRatio)
-        const halfLength = 7.4
+      for (let height = -1.8; height <= 3.7; height += 0.34) {
+        if (positiveInitialOnly && height < 0) continue
+        const angle = Math.atan(slope(time, height) * scaleRatio)
+        const halfLength = 7.1
         const centerX = viewport.x(time)
         const centerY = viewport.y(height)
         const dx = Math.cos(angle) * halfLength
@@ -542,9 +846,17 @@ function DirectionFieldLab() {
       }
     }
 
-    plotCurve(context, viewport, () => carryingCapacity, LAB_COLORS.sage, { dashed: true, lineWidth: 1.5 })
+    const equilibrium = equationId === 'logistic' || equationId === 'relaxation'
+      ? capacity
+      : equationId === 'decay' || equationId === 'quadratic' ? 0 : null
+    if (equilibrium !== null) {
+      plotCurve(context, viewport, () => equilibrium, LAB_COLORS.sage, { dashed: true, lineWidth: 1.5 })
+    }
 
-    for (const start of [0.23, 0.95, 1.55, 2.55, 3.15]) {
+    const starts = positiveInitialOnly
+      ? [0.23, 0.95, 1.55, 2.55, 3.15]
+      : [-1.4, -0.55, 0.23, 0.95, 1.55, 2.55, 3.15]
+    for (const start of starts) {
       plotCurve(context, viewport, (time) => solution(time, start), 'rgba(238, 232, 217, 0.24)', {
         lineWidth: 1.3,
         domain: [0, 5.5],
@@ -558,29 +870,139 @@ function DirectionFieldLab() {
     drawPoint(context, viewport, 0, initial, LAB_COLORS.gold, 5)
   }
 
+  const oscillatorAtThree = phasePortrait
+    ? oscillatorState(3, initial, initialVelocity, frequency, damping)
+    : null
+  const equilibriumLabel = equationId === 'logistic' || equationId === 'relaxation'
+    ? `y = ${formatNumber(capacity, 2)}`
+    : equationId === 'growth'
+      ? 'y = 0（不稳定）'
+      : equationId === 'forced'
+        ? '无时间不变平衡点'
+        : 'y = 0'
+
   return (
     <ExperimentLayout
-      canvas={<LabCanvas label="常微分方程实验：Logistic 方程的方向场与解轨道" draw={draw} xRange={[-0.6, 5.7]} yRange={[-0.45, 3.7]} />}
+      canvas={<LabCanvas
+        label={phasePortrait ? '二阶阻尼振子实验：位置与速度的相平面' : `常微分方程实验：${selected.label}的方向场与解轨道`}
+        draw={draw}
+        xRange={phasePortrait ? [-3.4, 3.4] : [-0.6, 5.7]}
+        yRange={phasePortrait ? [-3.3, 3.3] : positiveInitialOnly ? [-0.45, 3.8] : [-2.05, 3.8]}
+      />}
       legend={[
-        [LAB_COLORS.gold, '选定初值轨道'],
+        [LAB_COLORS.gold, phasePortrait ? '指定初值的相轨道' : '选定初值轨道'],
         [LAB_COLORS.ivory, '其他初值轨道'],
-        [LAB_COLORS.sage, '稳定平衡 y = 2'],
+        [LAB_COLORS.sage, phasePortrait ? '相平面平衡点' : '稳定平衡（存在时）'],
       ]}
-      formula={String.raw`$$\frac{dy}{dt}=r y\left(1-\frac{y}{K}\right),\qquad K=2,\quad y(0)=y_0.$$`}
-      observation="微分方程先在每一点指定变化方向；一条解曲线之所以成立，是因为它始终顺着这些方向前进。"
+      formula={selected.formula}
+      observation={selected.explanation}
     >
-      <ControlHeading label="Logistic 方程" />
-      <ParameterControl label="增长率 r" value={growth} min={0.2} max={2.2} step={0.05} onChange={setGrowth} reset={1} />
-      <ParameterControl label="初始值 y₀" value={initial} min={0.12} max={3.4} step={0.02} onChange={setInitial} reset={0.55} />
-      <Readout label="初始斜率 y′(0)" value={formatNumber(slope(initial), 4)} />
-      <Readout label="t = 3 时的解" value={formatNumber(solution(3, initial), 5)} />
-      <Readout label="稳定平衡点" value="y = 2" accent />
-      <Readout label="不稳定平衡点" value="y = 0" />
+      <ControlHeading label="方程与初值" />
+      <label className="block space-y-2 text-sm text-[#c9c5b9]">
+        <span>选择微分方程</span>
+        <select
+          aria-label="微分方程类型"
+          value={equationId}
+          onChange={(event) => {
+            const next = event.target.value as DifferentialEquationId
+            setEquationId(next)
+            if ((next === 'logistic' || next === 'quadratic') && initial <= 0) setInitial(0.55)
+          }}
+          className={selectClassName}
+        >
+          {(Object.entries(DIFFERENTIAL_EQUATIONS) as [DifferentialEquationId, (typeof DIFFERENTIAL_EQUATIONS)[DifferentialEquationId]][]).map(
+            ([id, equation]) => <option key={id} value={id}>{equation.label}</option>,
+          )}
+        </select>
+      </label>
+      {!phasePortrait && (
+        <ParameterControl label="变化率 r" value={growth} min={0.2} max={2.2} step={0.05} onChange={setGrowth} reset={1} />
+      )}
+      {(equationId === 'logistic' || equationId === 'relaxation') && (
+        <ParameterControl label="目标水平 K" value={capacity} min={0.5} max={3.3} step={0.05} onChange={setCapacity} reset={2} />
+      )}
+      {(equationId === 'forced' || phasePortrait) && (
+        <ParameterControl label={phasePortrait ? '固有频率 ω' : '外力频率 ω'} value={frequency} min={0.35} max={2.5} step={0.05} onChange={setFrequency} reset={1} />
+      )}
+      {phasePortrait && (
+        <ParameterControl label="阻尼比 ζ" value={damping} min={0} max={2} step={0.05} onChange={setDamping} reset={0.3} />
+      )}
+      <ParameterControl
+        label={phasePortrait ? '初始位置 y₀' : '初始值 y₀'}
+        value={initial}
+        min={positiveInitialOnly ? 0.12 : -2.6}
+        max={phasePortrait ? 2.8 : 3.4}
+        step={0.02}
+        onChange={setInitial}
+        reset={0.55}
+      />
+      {phasePortrait && (
+        <ParameterControl label="初始速度 v₀" value={initialVelocity} min={-2.8} max={2.8} step={0.05} onChange={setInitialVelocity} reset={0.2} />
+      )}
+      {phasePortrait && oscillatorAtThree ? (
+        <>
+          <Readout label="t = 3 时的位置" value={formatNumber(oscillatorAtThree[0], 5)} />
+          <Readout label="t = 3 时的速度" value={formatNumber(oscillatorAtThree[1], 5)} />
+          <Readout
+            label="阻尼状态"
+            value={damping < 1 ? '欠阻尼' : damping > 1 ? '过阻尼' : '临界阻尼'}
+            accent
+          />
+          <Readout label="平衡点 (y, v)" value="(0, 0)" />
+        </>
+      ) : (
+        <>
+          <Readout label="初始斜率 y′(0)" value={formatNumber(slope(0, initial), 4)} />
+          <Readout label="t = 3 时的解" value={formatNumber(solution(3, initial), 5)} />
+          <Readout label="平衡与长期行为" value={equilibriumLabel} accent />
+        </>
+      )}
       <p className="pt-2 text-xs leading-6 text-[#85867d]">
-        当 y₀ &gt; 0 且 r &gt; 0 时，解轨道最终趋向环境容量 K；不同初值只改变到达的路径。
+        {phasePortrait
+          ? '横轴表示位置 y，纵轴表示速度 v = y′；二阶方程因此转化为相平面中的一阶二维系统。'
+          : equationId === 'forced'
+            ? '方向场明确依赖时间 t，因此不能把周期受迫方程误认为具有固定平衡点的自治系统。'
+            : '灰色轨道对应其他初值；金色轨道严格使用当前选定初值，便于比较解的稳定性。'}
       </p>
     </ExperimentLayout>
   )
+}
+
+function oscillatorState(
+  time: number,
+  initialPosition: number,
+  initialVelocity: number,
+  frequency: number,
+  damping: number,
+): [number, number] {
+  if (Math.abs(damping - 1) < 0.0001) {
+    const rate = Math.exp(-frequency * time)
+    const slope = initialVelocity + frequency * initialPosition
+    return [
+      rate * (initialPosition + slope * time),
+      rate * (initialVelocity - frequency * slope * time),
+    ]
+  }
+
+  if (damping < 1) {
+    const dampedFrequency = frequency * Math.sqrt(1 - damping ** 2)
+    const envelope = Math.exp(-damping * frequency * time)
+    const cosine = Math.cos(dampedFrequency * time)
+    const sine = Math.sin(dampedFrequency * time)
+    return [
+      envelope * (initialPosition * cosine + ((initialVelocity + damping * frequency * initialPosition) / dampedFrequency) * sine),
+      envelope * (initialVelocity * cosine - ((frequency ** 2 * initialPosition + damping * frequency * initialVelocity) / dampedFrequency) * sine),
+    ]
+  }
+
+  const root = Math.sqrt(damping ** 2 - 1)
+  const firstRate = -frequency * (damping - root)
+  const secondRate = -frequency * (damping + root)
+  const firstWeight = (initialVelocity - secondRate * initialPosition) / (firstRate - secondRate)
+  const secondWeight = (firstRate * initialPosition - initialVelocity) / (firstRate - secondRate)
+  const first = firstWeight * Math.exp(firstRate * time)
+  const second = secondWeight * Math.exp(secondRate * time)
+  return [first + second, firstRate * first + secondRate * second]
 }
 
 interface ExperimentLayoutProps {

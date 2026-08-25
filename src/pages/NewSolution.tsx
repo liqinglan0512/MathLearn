@@ -4,6 +4,7 @@ import { store, uid } from '@/lib/store'
 import { useAuth } from '@/lib/auth'
 import type { Attachment, Solution } from '@/lib/types'
 import { Markdown } from '@/components/Markdown'
+import { MathProse } from '@/components/reading/MathProse'
 import { MarkdownEditor } from '@/components/MarkdownEditor'
 import { AttachmentUploader } from '@/components/Attachments'
 import { Button } from '@/components/ui/button'
@@ -53,7 +54,7 @@ export default function NewSolution() {
       <h1 className="text-2xl font-semibold tracking-tight">提交解法</h1>
       <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.03] p-5">
         <p className="text-xs text-neutral-400">题目</p>
-        <h2 className="mt-1 font-medium">{problem.title}</h2>
+        <h2 className="mt-1 font-medium"><MathProse content={problem.title} /></h2>
         <div className="mt-2 text-sm">
           <Markdown content={problem.statement} />
         </div>

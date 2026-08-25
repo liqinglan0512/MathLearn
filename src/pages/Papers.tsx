@@ -3,6 +3,7 @@ import { ArrowRight, Clock3, FileStack, Plus } from 'lucide-react'
 import { parsePaperQuestions, recommendedMinutes } from '@/lib/exam'
 import { store } from '@/lib/store'
 import { useAuth } from '@/lib/auth'
+import { MathProse } from '@/components/reading/MathProse'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -38,10 +39,10 @@ export default function Papers() {
                 <FileStack className="mt-1 h-5 w-5 shrink-0 text-[#c1a976]" />
                 <div className="min-w-0 flex-1">
                   <h2 className="inline-flex items-center gap-2 text-lg font-medium leading-8 text-[#e9e4d7]">
-                    {paper.title}
+                    <MathProse content={paper.title} />
                     <ArrowRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-70" />
                   </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-7 text-[#a5a297]">{paper.description}</p>
+                  <p className="mt-2 max-w-2xl text-sm leading-7 text-[#a5a297]"><MathProse content={paper.description} /></p>
                   <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#99968c]">
                     <Badge variant="outline">{paper.competition}</Badge>
                     <Badge variant="outline">{paper.year} 年</Badge>

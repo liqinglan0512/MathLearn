@@ -1,4 +1,5 @@
 import type { Article, Comment, Paper, Problem, Solution } from './types'
+import { getEuclidArticles } from './euclid'
 
 export const seedProblems: Problem[] = [
   {
@@ -6,7 +7,7 @@ export const seedProblems: Problem[] = [
     title: '极限：Stolz 定理的应用',
     statement:
       '设数列 $\\{a_n\\}$ 满足 $a_1 = 1$，$a_{n+1} = a_n + \\dfrac{1}{a_n}$。\n\n**求：** $\\displaystyle\\lim_{n \\to \\infty} \\dfrac{a_n}{\\sqrt{n}}$。\n\n> 提示：先证明 $a_n \\to +\\infty$，再考虑 $a_n^2$ 的递推。',
-    chapter: '数学分析',
+    chapter: '极限',
     difficulty: '提高',
     competition: '全国大学生数学竞赛',
     tags: ['极限', 'Stolz 定理', '递推数列'],
@@ -19,7 +20,7 @@ export const seedProblems: Problem[] = [
     title: '积分不等式：Cauchy–Schwarz 的妙用',
     statement:
       '设 $f(x)$ 在 $[0,1]$ 上连续可微，$f(0) = 0$。\n\n**证明：**\n$$\\int_0^1 f^2(x)\\,\\mathrm{d}x \\le \\frac{1}{2}\\int_0^1 \\bigl(f\'(x)\\bigr)^2\\,\\mathrm{d}x$$',
-    chapter: '数学分析',
+    chapter: '函数',
     difficulty: '冲刺',
     competition: '全国大学生数学竞赛',
     tags: ['积分不等式', 'Cauchy–Schwarz', '微积分基本定理'],
@@ -32,7 +33,7 @@ export const seedProblems: Problem[] = [
     title: '矩阵：秩的分解不等式',
     statement:
       '设 $A$、$B$ 均为 $n$ 阶实方阵。\n\n**证明：**\n$$r(AB) \\ge r(A) + r(B) - n$$\n\n其中 $r(\\cdot)$ 表示矩阵的秩。',
-    chapter: '高等代数',
+    chapter: '代数',
     difficulty: '基础',
     competition: '考研数学',
     tags: ['矩阵的秩', 'Sylvester 不等式'],
@@ -84,7 +85,7 @@ export const seedProblems: Problem[] = [
     title: '级数：正项级数敛散性判别',
     statement:
       '判别级数 $\\displaystyle\\sum_{n=3}^{\\infty} \\frac{1}{n \\ln n \\,(\\ln \\ln n)^p}$ 的敛散性（$p > 0$），并给出完整的积分判别论证。',
-    chapter: '数学分析',
+    chapter: '数列',
     difficulty: '入门',
     competition: '考研数学',
     tags: ['级数', '积分判别法'],
@@ -178,7 +179,7 @@ const seedArticlesBase: Article[] = [
     id: 'a1',
     title: '泰勒公式：从以直代曲到一般逼近',
     summary: '不背公式，从如何用一个多项式逼近一个函数这一朴素问题出发，完整推出泰勒公式与余项。',
-    topic: '数学分析',
+    topic: '导数',
     authorId: 'admin',
     authorName: 'MathForge 官方',
     createdAt: Date.now() - 86400000 * 6,
@@ -264,7 +265,7 @@ $$
     id: 'a2',
     title: '柯西不等式：从内积的投影谈起',
     summary: '为什么内积的绝对值不超过模长之积？从投影不长于原向量这一几何事实推出代数形式。',
-    topic: '高等代数',
+    topic: '代数',
     authorId: 'admin',
     authorName: 'MathForge 官方',
     createdAt: Date.now() - 86400000 * 4,
@@ -343,7 +344,7 @@ const seedArticlesMore: Article[] = [
     id: 'a3',
     title: '极限的严格定义：把无限接近翻译成不等式',
     summary: '极限为什么非要用一串不等式来定义？从直觉说法的漏洞出发，一步步逼出标准定义。',
-    topic: '数学分析',
+    topic: '极限',
     authorId: 'admin',
     authorName: 'MathForge 官方',
     createdAt: Date.now() - 86400000 * 3,
@@ -408,7 +409,7 @@ $$
     id: 'a4',
     title: '行列式：从平行六面体的体积长出来的函数',
     summary: '行列式不是一堆数字的奇怪运算，而是被三条体积公理唯一确定的有向体积。',
-    topic: '高等代数',
+    topic: '代数',
     authorId: 'admin',
     authorName: 'MathForge 官方',
     createdAt: Date.now() - 86400000 * 3,
@@ -474,7 +475,7 @@ $$
     id: 'a5',
     title: '特征值与特征向量：寻找变换下的不变方向',
     summary: '矩阵作用在向量上通常会改变方向，但总有一些方向只被拉伸——找到它们，矩阵就被看透了。',
-    topic: '线性代数',
+    topic: '代数',
     authorId: 'admin',
     authorName: 'MathForge 官方',
     createdAt: Date.now() - 86400000 * 3,
@@ -535,7 +536,7 @@ $$
     id: 'a6',
     title: '定积分：曲边梯形面积的严格化',
     summary: '面积只能对直边形定义，曲边怎么办？分割、近似、取极限三步，逼出黎曼和与微积分基本定理。',
-    topic: '高等数学',
+    topic: '函数',
     authorId: 'admin',
     authorName: 'MathForge 官方',
     createdAt: Date.now() - 86400000 * 3,
@@ -908,7 +909,7 @@ const seedArticlesLearningLoop: Article[] = [
     id: 'a12',
     title: 'Stolz 定理：差分比为什么决定数列商的极限',
     summary: '从离散望远镜求和出发，说明为什么局部增量之比能控制整体商，并逐一检查分母条件。',
-    topic: '数学分析',
+    topic: '数列',
     authorId: 'admin',
     authorName: 'MathForge 官方',
     createdAt: Date.now() - 86400000,
@@ -998,7 +999,7 @@ $$
     id: 'a13',
     title: '拉格朗日中值定理：平均变化率为什么会在某一点出现',
     summary: '从两端点的割线出发，减去这条直线，把平均变化率问题还原为 Rolle 定理。',
-    topic: '数学分析',
+    topic: '导数',
     authorId: 'admin',
     authorName: 'MathForge 官方',
     createdAt: Date.now() - 86400000,
@@ -1189,6 +1190,7 @@ export const seedArticles: Article[] = [
   ...seedArticlesMore,
   ...seedArticlesNumGeo,
   ...seedArticlesLearningLoop,
+  ...getEuclidArticles(),
 ]
 
 export const seedPapers: Paper[] = [
