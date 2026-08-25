@@ -10,7 +10,7 @@ interface Curve {
   enabled: boolean
 }
 
-const COLORS = ['#4f46e5', '#dc2626', '#059669']
+const COLORS = ['#818cf8', '#f87171', '#34d399']
 const PRESETS: { name: string; expr: string; params: number[] }[] = [
   { name: '泰勒逼近 sin', expr: 'x - x^3/6 + x^5/120', params: [1, 1, 1, 1] },
   { name: '阻尼振荡', expr: 'a*exp(-b*x)*sin(c*x)', params: [1, 0.3, 3, 1] },
@@ -79,7 +79,7 @@ export default function Viz() {
 
     // 网格
     const step = niceStep(view.span / 10)
-    ctx.strokeStyle = '#f0f0f0'
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'
     ctx.lineWidth = 1
     for (let gx = Math.ceil(xMin / step) * step; gx <= xMax; gx += step) {
       ctx.beginPath(); ctx.moveTo(toX(gx), 0); ctx.lineTo(toX(gx), H); ctx.stroke()
@@ -88,12 +88,12 @@ export default function Viz() {
       ctx.beginPath(); ctx.moveTo(0, toY(gy)); ctx.lineTo(W, toY(gy)); ctx.stroke()
     }
     // 坐标轴
-    ctx.strokeStyle = '#a3a3a3'
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'
     ctx.lineWidth = 1.2
     ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(W, toY(0)); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), H); ctx.stroke()
     // 刻度
-    ctx.fillStyle = '#a3a3a3'
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'
     ctx.font = '10px ui-monospace, monospace'
     ctx.textAlign = 'center'
     for (let gx = Math.ceil(xMin / step) * step; gx <= xMax; gx += step) {
@@ -167,12 +167,12 @@ export default function Viz() {
   return (
     <div className="py-8">
       <h1 className="text-2xl font-semibold tracking-tight">函数图像实验室</h1>
-      <p className="mt-1 text-sm text-neutral-500">
+      <p className="mt-1 text-sm text-neutral-400">
         输入表达式，拖动滑块实时调整参数 a / b / c / d；滚轮缩放，拖拽平移。
       </p>
 
       <div
-        className="mt-6 overflow-hidden rounded-xl border border-neutral-200 bg-white"
+        className="mt-6 overflow-hidden rounded-lg border border-white/10 bg-black/40"
         style={{ touchAction: 'none' }}
       >
         <canvas
@@ -221,7 +221,7 @@ export default function Viz() {
                 type="checkbox"
                 checked={c.enabled}
                 onChange={(e) => setCurves((cs) => cs.map((x, j) => (j === i ? { ...x, enabled: e.target.checked } : x)))}
-                className="h-4 w-4 accent-neutral-900"
+                className="h-4 w-4 accent-white"
               />
               <span className="h-3 w-3 rounded-full" style={{ background: c.color }} />
               <Input
@@ -234,7 +234,7 @@ export default function Viz() {
           ))}
           {errors.map(
             (e, i) =>
-              e && curves[i].enabled && <p key={i} className="text-xs text-red-600">曲线 {i + 1}：{e}</p>,
+              e && curves[i].enabled && <p key={i} className="text-xs text-red-400">曲线 {i + 1}：{e}</p>,
           )}
           <p className="text-xs text-neutral-400">
             支持：+ − * / ^、括号、sin cos tan exp ln log sqrt abs min max …、常量 pi e、变量 x 与参数 a b c d；支持隐式乘法（2x、2sin(x)）。
@@ -245,7 +245,7 @@ export default function Viz() {
             <div key={k}>
               <div className="flex justify-between text-sm">
                 <span className="font-mono font-medium">{k}</span>
-                <span className="font-mono text-neutral-500">{params[k].toFixed(2)}</span>
+                <span className="font-mono text-neutral-400">{params[k].toFixed(2)}</span>
               </div>
               <Slider
                 value={[params[k]]}

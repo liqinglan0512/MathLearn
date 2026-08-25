@@ -55,19 +55,19 @@ export function AttachmentUploader({
       <Button type="button" variant="outline" size="sm" onClick={() => ref.current?.click()}>
         <ImageIcon className="mr-1.5 h-4 w-4" /> 添加图片 / PDF
       </Button>
-      {err && <p className="mt-2 text-xs text-red-600">{err}</p>}
+      {err && <p className="mt-2 text-xs text-red-400">{err}</p>}
       {value.length > 0 && (
         <ul className="mt-3 space-y-1.5">
           {value.map((a, i) => (
             <li
               key={a.name + i}
-              className="flex items-center gap-2 rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+              className="flex items-center gap-2 rounded-md border border-white/10 px-3 py-1.5 text-sm"
             >
-              {a.type === 'pdf' ? <FileText className="h-4 w-4 text-red-500" /> : <ImageIcon className="h-4 w-4 text-indigo-500" />}
+              {a.type === 'pdf' ? <FileText className="h-4 w-4 text-red-400" /> : <ImageIcon className="h-4 w-4 text-indigo-300" />}
               <span className="min-w-0 flex-1 truncate">{a.name}</span>
               <button
                 type="button"
-                className="text-neutral-400 hover:text-red-600"
+                className="text-neutral-400 hover:text-red-400"
                 onClick={() => onChange(value.filter((_, j) => j !== i))}
               >
                 <X className="h-4 w-4" />
@@ -86,13 +86,13 @@ export function AttachmentList({ items }: { items: Attachment[] }) {
     <div className="mt-4 space-y-3">
       {items.map((a, i) =>
         a.type === 'image' ? (
-          <img key={i} src={a.dataUrl} alt={a.name} className="max-w-full rounded-lg border border-neutral-200" />
+          <img key={i} src={a.dataUrl} alt={a.name} className="max-w-full rounded-lg border border-white/10" />
         ) : (
           <a
             key={i}
             href={a.dataUrl}
             download={a.name}
-            className="flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-3 text-sm text-indigo-600 hover:bg-neutral-50"
+            className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm text-indigo-300 hover:bg-white/5"
           >
             <FileText className="h-4 w-4" /> {a.name}（点击下载）
           </a>

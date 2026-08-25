@@ -51,7 +51,7 @@ export default function NewSolution() {
   return (
     <div className="mx-auto max-w-3xl py-8">
       <h1 className="text-2xl font-semibold tracking-tight">提交解法</h1>
-      <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50/50 p-5">
+      <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.03] p-5">
         <p className="text-xs text-neutral-400">题目</p>
         <h2 className="mt-1 font-medium">{problem.title}</h2>
         <div className="mt-2 text-sm">
@@ -72,7 +72,7 @@ export default function NewSolution() {
           <Label className="mb-1.5 block">手写过程图片 / PDF（可选）</Label>
           <AttachmentUploader value={attachments} onChange={setAttachments} />
         </div>
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="text-sm text-red-400">{err}</p>}
         <div className="flex gap-3">
           <Button type="submit">发布解法</Button>
           <Button type="button" variant="ghost" onClick={() => nav(-1)}>取消</Button>

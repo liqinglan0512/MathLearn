@@ -23,9 +23,9 @@ export default function Register() {
 
   return (
     <div className="mx-auto max-w-sm py-16">
-      <Sigma className="mx-auto h-8 w-8 text-indigo-600" />
+      <Sigma className="mx-auto h-8 w-8 text-indigo-300" />
       <h1 className="mt-4 text-center text-2xl font-semibold">注册 MathForge</h1>
-      <p className="mt-2 text-center text-sm text-neutral-500">中国场景：支持邮箱或手机号注册</p>
+      <p className="mt-2 text-center text-sm text-neutral-400">中国场景：支持邮箱或手机号注册</p>
       <form onSubmit={submit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="name">昵称</Label>
@@ -53,14 +53,14 @@ export default function Register() {
             autoComplete="new-password"
           />
         </div>
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="text-sm text-red-400">{err}</p>}
         <Button className="w-full" type="submit">
           注册并登录
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-neutral-500">
+      <p className="mt-6 text-center text-sm text-neutral-400">
         已有账号？{' '}
-        <Link to="/login" className="text-indigo-600 hover:underline">
+        <Link to="/login" className="text-indigo-300 hover:underline">
           去登录
         </Link>
       </p>

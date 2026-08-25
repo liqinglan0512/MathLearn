@@ -57,7 +57,7 @@ export default function NewProblem() {
   return (
     <div className="mx-auto max-w-3xl py-8">
       <h1 className="text-2xl font-semibold tracking-tight">上传题目</h1>
-      <p className="mt-1 text-sm text-neutral-500">支持 Markdown + LaTeX 题干，可附 PDF 或图片。</p>
+      <p className="mt-1 text-sm text-neutral-400">支持 Markdown + LaTeX 题干，可附 PDF 或图片。</p>
       <form onSubmit={submit} className="mt-8 space-y-6">
         <div>
           <Label>标题</Label>
@@ -98,7 +98,7 @@ export default function NewProblem() {
           <Label className="mb-1.5 block">附件（可选）</Label>
           <AttachmentUploader value={attachments} onChange={setAttachments} />
         </div>
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="text-sm text-red-400">{err}</p>}
         <div className="flex gap-3">
           <Button type="submit">发布题目</Button>
           <Button type="button" variant="ghost" onClick={() => nav(-1)}>取消</Button>

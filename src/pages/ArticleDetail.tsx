@@ -17,7 +17,7 @@ export default function ArticleDetail() {
   if (!article) {
     return (
       <div className="py-20 text-center">
-        <p className="text-neutral-500">文章不存在或已被删除。</p>
+        <p className="text-neutral-400">文章不存在或已被删除。</p>
         <Button variant="ghost" className="mt-4" onClick={() => nav('/principles')}>返回列表</Button>
       </div>
     )
@@ -27,7 +27,7 @@ export default function ArticleDetail() {
 
   return (
     <div className="mx-auto max-w-3xl py-8">
-      <button onClick={() => nav('/principles')} className="flex items-center gap-1 text-sm text-neutral-400 hover:text-neutral-900">
+      <button onClick={() => nav('/principles')} className="flex items-center gap-1 text-sm text-neutral-400 hover:text-neutral-100">
         <ArrowLeft className="h-4 w-4" /> 第一性原理
       </button>
       <div className="mt-6">

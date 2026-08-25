@@ -4,64 +4,34 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --background: 240 20% 3%;
+    --foreground: 0 0% 92%;
+    --card: 240 15% 6%;
+    --card-foreground: 0 0% 92%;
+    --popover: 240 15% 6%;
+    --popover-foreground: 0 0% 92%;
+    --primary: 0 0% 96%;
+    --primary-foreground: 240 20% 6%;
+    --secondary: 240 10% 12%;
+    --secondary-foreground: 0 0% 92%;
+    --muted: 240 10% 12%;
+    --muted-foreground: 240 5% 55%;
+    --accent: 240 10% 14%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.625rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 240 10% 14%;
+    --input: 240 10% 16%;
+    --ring: 235 80% 75%;
+    --radius: 0.5rem;
+    --sidebar-background: 240 15% 5%;
+    --sidebar-foreground: 0 0% 92%;
+    --sidebar-primary: 235 80% 75%;
+    --sidebar-primary-foreground: 240 20% 6%;
+    --sidebar-accent: 240 10% 12%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 240 10% 14%;
+    --sidebar-ring: 235 80% 75%;
   }
 }
 
@@ -69,28 +39,82 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  ::selection {
+    background: rgb(165 180 252 / 0.25);
   }
 }
-/* ---- Markdown + KaTeX 排版（极简） ---- */
-.md { line-height: 1.85; font-size: 0.95rem; color: #262626; overflow-wrap: break-word; }
-.md h1, .md h2, .md h3 { font-weight: 650; letter-spacing: -0.01em; margin: 1.6em 0 0.6em; }
-.md h1 { font-size: 1.4rem; }
-.md h2 { font-size: 1.2rem; }
-.md h3 { font-size: 1.05rem; }
-.md p { margin: 0.7em 0; }
-.md ul, .md ol { margin: 0.7em 0; padding-left: 1.5em; }
+
+/* ---- 全局氛围层：深空渐变，永远退居二线 ---- */
+.cosmos-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(1200px 700px at 75% -10%, rgb(99 102 241 / 0.10), transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, rgb(34 211 238 / 0.05), transparent 60%),
+    linear-gradient(#050508, #0a0a0f);
+}
+.cosmos-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgb(255 255 255 / 0.5), transparent),
+    radial-gradient(1px 1px at 42% 68%, rgb(255 255 255 / 0.35), transparent),
+    radial-gradient(1.5px 1.5px at 68% 12%, rgb(190 200 255 / 0.55), transparent),
+    radial-gradient(1px 1px at 84% 46%, rgb(255 255 255 / 0.3), transparent),
+    radial-gradient(1px 1px at 28% 86%, rgb(190 220 255 / 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 55% 38%, rgb(255 255 255 / 0.25), transparent),
+    radial-gradient(1px 1px at 92% 78%, rgb(255 255 255 / 0.35), transparent);
+  animation: star-drift 90s linear infinite;
+}
+@keyframes star-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-60px); }
+}
+
+/* ---- 内容卡片：半透明深色 + 轻微毛玻璃 ---- */
+.glass {
+  background: rgb(14 14 20 / 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+/* ---- Markdown + KaTeX 深色排版 ---- */
+.md { line-height: 1.9; font-size: 0.95rem; color: #d4d4d8; overflow-wrap: break-word; }
+.md h1, .md h2, .md h3 { font-weight: 600; letter-spacing: -0.01em; margin: 1.7em 0 0.65em; color: #f4f4f5; }
+.md h1 { font-size: 1.35rem; }
+.md h2 { font-size: 1.15rem; padding-bottom: 0.35em; border-bottom: 1px solid rgb(255 255 255 / 0.06); }
+.md h3 { font-size: 1.02rem; }
+.md p { margin: 0.75em 0; }
+.md ul, .md ol { margin: 0.75em 0; padding-left: 1.5em; }
 .md ul { list-style: disc; }
 .md ol { list-style: decimal; }
-.md li { margin: 0.25em 0; }
-.md blockquote { border-left: 3px solid #c7d2fe; padding: 0.1em 0 0.1em 1em; color: #525252; margin: 0.9em 0; background: #fafafa; }
-.md strong { font-weight: 650; }
-.md a { color: #4f46e5; text-decoration: underline; text-underline-offset: 2px; }
-.md img { max-width: 100%; border-radius: 8px; border: 1px solid #e5e5e5; margin: 0.6em 0; }
-.md code { background: #f5f5f5; border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; }
-.md pre { background: #0a0a0a; color: #fafafa; border-radius: 8px; padding: 14px; overflow-x: auto; }
+.md li { margin: 0.3em 0; }
+.md li::marker { color: #71717a; }
+.md blockquote { border-left: 3px solid rgb(165 180 252 / 0.4); padding: 0.15em 0 0.15em 1em; color: #a1a1aa; margin: 1em 0; background: rgb(255 255 255 / 0.03); border-radius: 0 6px 6px 0; }
+.md strong { font-weight: 600; color: #fafafa; }
+.md a { color: #a5b4fc; text-decoration: underline; text-underline-offset: 3px; }
+.md img { max-width: 100%; border-radius: 6px; border: 1px solid rgb(255 255 255 / 0.1); margin: 0.6em 0; }
+.md code { background: rgb(255 255 255 / 0.07); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; color: #e4e4e7; }
+.md pre { background: #050508; border: 1px solid rgb(255 255 255 / 0.08); border-radius: 6px; padding: 14px; overflow-x: auto; }
 .md pre code { background: transparent; padding: 0; color: inherit; }
-.md .katex-display { margin: 1em 0; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
+.md .katex-display { margin: 1.1em 0; overflow-x: auto; overflow-y: hidden; padding: 4px 2px; }
+.md .katex-display > .katex { color: #f4f4f5; }
+.md .katex { font-size: 1.06em; }
 .md table { border-collapse: collapse; margin: 0.9em 0; font-size: 0.9em; }
-.md th, .md td { border: 1px solid #e5e5e5; padding: 6px 12px; }
+.md th, .md td { border: 1px solid rgb(255 255 255 / 0.1); padding: 6px 12px; }
+
+/* ---- 克制的过渡与滚动条 ---- */
+a, button { transition-property: color, background-color, border-color, opacity; transition-duration: 150ms; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 0.12); border-radius: 5px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-track { background: transparent; }

@@ -22,9 +22,9 @@ export default function Login() {
 
   return (
     <div className="mx-auto max-w-sm py-16">
-      <Sigma className="mx-auto h-8 w-8 text-indigo-600" />
+      <Sigma className="mx-auto h-8 w-8 text-indigo-300" />
       <h1 className="mt-4 text-center text-2xl font-semibold">登录 MathForge</h1>
-      <p className="mt-2 text-center text-sm text-neutral-500">登录后可上传解法、参与讨论</p>
+      <p className="mt-2 text-center text-sm text-neutral-400">登录后可上传解法、参与讨论</p>
       <form onSubmit={submit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="account">邮箱或手机号</Label>
@@ -48,14 +48,14 @@ export default function Login() {
             autoComplete="current-password"
           />
         </div>
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="text-sm text-red-400">{err}</p>}
         <Button className="w-full" type="submit" disabled={!isValidAccount(account.trim()) || !password}>
           登录
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-neutral-500">
+      <p className="mt-6 text-center text-sm text-neutral-400">
         还没有账号？{' '}
-        <Link to="/register" className="text-indigo-600 hover:underline">
+        <Link to="/register" className="text-indigo-300 hover:underline">
           立即注册
         </Link>
       </p>

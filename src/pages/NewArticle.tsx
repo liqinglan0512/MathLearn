@@ -48,7 +48,7 @@ export default function NewArticle() {
   return (
     <div className="mx-auto max-w-3xl py-8">
       <h1 className="text-2xl font-semibold tracking-tight">写第一性原理推导</h1>
-      <p className="mt-1 text-sm text-neutral-500">
+      <p className="mt-1 text-sm text-neutral-400">
         从一个朴素的问题或定义出发，把公式/定理完整地推出来。
       </p>
       <form onSubmit={submit} className="mt-8 space-y-6">
@@ -78,7 +78,7 @@ export default function NewArticle() {
             placeholder={'## 1. 起点：我们想干什么？\n\n……\n\n$$P_n(x) = \\sum_{k=0}^{n} \\frac{f^{(k)}(x_0)}{k!} (x-x_0)^k$$'}
           />
         </div>
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="text-sm text-red-400">{err}</p>}
         <div className="flex gap-3">
           <Button type="submit">发布推导</Button>
           <Button type="button" variant="ghost" onClick={() => nav(-1)}>取消</Button>

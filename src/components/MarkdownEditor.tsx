@@ -15,15 +15,15 @@ export function MarkdownEditor({
 }) {
   const [tab, setTab] = useState<'write' | 'preview'>('write')
   return (
-    <div className="rounded-lg border border-neutral-200">
-      <div className="flex items-center gap-1 border-b border-neutral-100 px-2 py-1.5">
+    <div className="rounded-lg border border-white/10">
+      <div className="flex items-center gap-1 border-b border-white/5 px-2 py-1.5">
         {(['write', 'preview'] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={`rounded-md px-3 py-1 text-xs font-medium ${
-              tab === t ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900'
+              tab === t ? 'bg-white/15 text-white' : 'text-neutral-400 hover:text-neutral-100'
             }`}
           >
             {t === 'write' ? '编辑' : '预览'}

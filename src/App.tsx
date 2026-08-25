@@ -9,6 +9,9 @@ import NewProblem from '@/pages/NewProblem'
 import ProblemDetail from '@/pages/ProblemDetail'
 import NewSolution from '@/pages/NewSolution'
 import Principles from '@/pages/Principles'
+import Papers from '@/pages/Papers'
+import PaperDetail from '@/pages/PaperDetail'
+import NewPaper from '@/pages/NewPaper'
 import ArticleDetail from '@/pages/ArticleDetail'
 import NewArticle from '@/pages/NewArticle'
 import Viz from '@/pages/Viz'
@@ -26,6 +29,9 @@ export default function App() {
           <Route path="/problems/new" element={<NewProblem />} />
           <Route path="/problems/:id" element={<ProblemDetail />} />
           <Route path="/problems/:id/new-solution" element={<NewSolution />} />
+          <Route path="/papers" element={<Papers />} />
+          <Route path="/papers/new" element={<NewPaper />} />
+          <Route path="/papers/:id" element={<PaperDetail />} />
           <Route path="/principles" element={<Principles />} />
           <Route path="/principles/new" element={<NewArticle />} />
           <Route path="/principles/:id" element={<ArticleDetail />} />

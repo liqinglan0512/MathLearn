@@ -9,11 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 const DIFF_STYLE: Record<string, string> = {
-  入门: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  基础: 'border-sky-200 bg-sky-50 text-sky-700',
-  提高: 'border-amber-200 bg-amber-50 text-amber-700',
-  冲刺: 'border-orange-200 bg-orange-50 text-orange-700',
-  决赛: 'border-red-200 bg-red-50 text-red-700',
+  入门: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
+  基础: 'border-sky-400/20 bg-sky-400/10 text-sky-300',
+  提高: 'border-amber-400/20 bg-amber-400/10 text-amber-300',
+  冲刺: 'border-orange-400/20 bg-orange-400/10 text-orange-300',
+  决赛: 'border-red-400/20 bg-red-400/10 text-red-300',
 }
 
 export default function Problems() {
@@ -47,7 +47,7 @@ export default function Problems() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">题库</h1>
-          <p className="mt-1 text-sm text-neutral-500">共 {filtered.length} 道题 · 点击题目查看社区解法</p>
+          <p className="mt-1 text-sm text-neutral-400">共 {filtered.length} 道题 · 点击题目查看社区解法</p>
         </div>
         <Button size="sm" onClick={() => nav(user ? '/problems/new' : '/login')}>
           <Plus className="mr-1 h-4 w-4" /> 上传题目
@@ -69,9 +69,9 @@ export default function Problems() {
         <FilterRow label="竞赛" options={COMPETITIONS} value={competition} onChange={setCompetition} />
       </div>
 
-      <div className="mt-6 divide-y divide-neutral-100 border-t border-neutral-100">
+      <div className="mt-6 divide-y divide-white/5 border-t border-white/5">
         {filtered.map((p) => (
-          <Link key={p.id} to={`/problems/${p.id}`} className="block py-4 transition-colors hover:bg-neutral-50/60">
+          <Link key={p.id} to={`/problems/${p.id}`} className="block py-4 transition-colors hover:bg-white/[0.03]">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <h2 className="font-medium leading-snug">{p.title}</h2>
@@ -139,8 +139,8 @@ function FilterChip({
       onClick={onClick}
       className={`rounded-full border px-3 py-1 text-xs transition-colors ${
         active
-          ? 'border-neutral-900 bg-neutral-900 text-white'
-          : 'border-neutral-200 text-neutral-500 hover:border-neutral-400 hover:text-neutral-900'
+          ? 'border-white/40 bg-white/15 text-white'
+          : 'border-white/10 text-neutral-400 hover:border-white/25 hover:text-neutral-100'
       }`}
     >
       {children}

@@ -24,7 +24,7 @@ export default function ProblemDetail() {
   if (!problem) {
     return (
       <div className="py-20 text-center">
-        <p className="text-neutral-500">题目不存在或已被删除。</p>
+        <p className="text-neutral-400">题目不存在或已被删除。</p>
         <Button variant="ghost" className="mt-4" onClick={() => nav('/problems')}>
           返回题库
         </Button>
@@ -37,7 +37,7 @@ export default function ProblemDetail() {
 
   return (
     <div className="py-8">
-      <button onClick={() => nav('/problems')} className="flex items-center gap-1 text-sm text-neutral-400 hover:text-neutral-900">
+      <button onClick={() => nav('/problems')} className="flex items-center gap-1 text-sm text-neutral-400 hover:text-neutral-100">
         <ArrowLeft className="h-4 w-4" /> 返回题库
       </button>
 
@@ -50,14 +50,14 @@ export default function ProblemDetail() {
           <span className="text-neutral-400">{fmt(problem.createdAt)}</span>
         </div>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">{problem.title}</h1>
-        <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50/50 p-5 sm:p-6">
+        <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.03] p-5 sm:p-6">
           <Markdown content={problem.statement} />
           <AttachmentList items={problem.attachments} />
         </div>
         {problem.tags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {problem.tags.map((t) => (
-              <span key={t} className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs text-neutral-500">
+              <span key={t} className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-neutral-400">
                 {t}
               </span>
             ))}
@@ -73,7 +73,7 @@ export default function ProblemDetail() {
           </Button>
         </div>
         {solutions.length === 0 && (
-          <p className="mt-6 rounded-xl border border-dashed border-neutral-200 py-10 text-center text-sm text-neutral-400">
+          <p className="mt-6 rounded-lg border border-dashed border-white/10 py-10 text-center text-sm text-neutral-400">
             还没有解法 —— 来做第一个讲清楚这道题的人。
           </p>
         )}
@@ -106,12 +106,12 @@ function SolutionCard({
   onLike: () => void
 }) {
   return (
-    <div className="rounded-xl border border-neutral-200 p-5 sm:p-6">
+    <div className="rounded-lg border border-white/10 p-5 sm:p-6">
       <div className="flex items-center justify-between text-xs text-neutral-400">
         <span>
-          解法 #{index + 1} · <span className="font-medium text-neutral-600">{solution.authorName}</span> · {fmt(solution.createdAt)}
+          解法 #{index + 1} · <span className="font-medium text-neutral-300">{solution.authorName}</span> · {fmt(solution.createdAt)}
         </span>
-        <button onClick={onLike} className="flex items-center gap-1 text-neutral-400 transition-colors hover:text-red-500">
+        <button onClick={onLike} className="flex items-center gap-1 text-neutral-400 transition-colors hover:text-red-400">
           <Heart className="h-4 w-4" /> {solution.likes}
         </button>
       </div>
@@ -152,7 +152,7 @@ export function CommentThread({
           <div key={c.id} className="text-sm">
             <span className="font-medium">{c.authorName}</span>
             <span className="ml-2 text-xs text-neutral-400">{fmt(c.createdAt)}</span>
-            <p className="mt-1 text-neutral-700">{c.content}</p>
+            <p className="mt-1 text-neutral-300">{c.content}</p>
           </div>
         ))}
         {comments.length === 0 && <p className="text-sm text-neutral-400">还没有讨论，说点什么吧。</p>}

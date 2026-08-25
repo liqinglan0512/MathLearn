@@ -1,21 +1,32 @@
-import type { Article, Comment, Problem, Solution, User } from './types'
-import { seedArticles, seedProblems, seedSolutions, seedComments } from './seed'
+import type { Article, Comment, Paper, Problem, Solution, User } from './types'
+import { seedArticles, seedPapers, seedProblems, seedSolutions, seedComments } from './seed'
 
 const KEYS = {
   problems: 'mf_problems',
   solutions: 'mf_solutions',
   comments: 'mf_comments',
   articles: 'mf_articles',
+  papers: 'mf_papers',
   users: 'mf_users',
   session: 'mf_session',
 }
 
 type Key = keyof typeof KEYS
 
-function read<T>(key: Key, seed: T[]): T[] {
+// 读取时同步种子条目（按 id 覆盖更新），并把新增种子合并进去，保证老访客也能看到新内容与修正
+function read<T extends { id: string }>(key: Key, seed: T[]): T[] {
   try {
     const raw = localStorage.getItem(KEYS[key])
-    if (raw) return JSON.parse(raw) as T[]
+    if (raw) {
+      const existing = JSON.parse(raw) as T[]
+      const merged = existing.map((e) => seed.find((s) => s.id === e.id) ?? e)
+      const missing = seed.filter((s) => !existing.some((e) => e.id === s.id))
+      const result = [...merged, ...missing]
+      if (missing.length > 0 || JSON.stringify(result) !== raw) {
+        localStorage.setItem(KEYS[key], JSON.stringify(result))
+      }
+      return result
+    }
   } catch {
     /* corrupted -> reseed */
   }
@@ -40,6 +51,7 @@ export const store = {
   solutions: () => read<Solution>('solutions', seedSolutions),
   comments: () => read<Comment>('comments', seedComments),
   articles: () => read<Article>('articles', seedArticles),
+  papers: () => read<Paper>('papers', seedPapers),
   users: () => read<User>('users', []),
 
   addProblem(p: Problem) {
@@ -53,6 +65,9 @@ export const store = {
   },
   addArticle(a: Article) {
     write('articles', [a, ...store.articles()])
+  },
+  addPaper(p: Paper) {
+    write('papers', [p, ...store.papers()])
   },
   addUser(u: User) {
     write('users', [...store.users(), u])

@@ -23,7 +23,7 @@ export default function Tools() {
   return (
     <div className="py-8">
       <h1 className="text-2xl font-semibold tracking-tight">基础工具</h1>
-      <p className="mt-1 text-sm text-neutral-500">公式编辑器与计算器，备赛手边的小工具。</p>
+      <p className="mt-1 text-sm text-neutral-400">公式编辑器与计算器，备赛手边的小工具。</p>
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <FormulaEditor />
         <Calculator />
@@ -45,14 +45,14 @@ function FormulaEditor() {
   }, [tex])
 
   return (
-    <section className="rounded-xl border border-neutral-200 p-5">
+    <section className="rounded-lg border border-white/10 p-5">
       <h2 className="font-medium">公式编辑器</h2>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {LATEX_SNIPPETS.map((s) => (
           <button
             key={s.label}
             onClick={() => setTex((t) => t + s.tex)}
-            className="rounded-md border border-neutral-200 px-2 py-1 text-xs text-neutral-500 hover:border-neutral-400 hover:text-neutral-900"
+            className="rounded-md border border-white/10 px-2 py-1 text-xs text-neutral-400 hover:border-white/25 hover:text-neutral-100"
           >
             {s.label}
           </button>
@@ -65,11 +65,11 @@ function FormulaEditor() {
         className="mt-3 font-mono text-sm"
         placeholder="输入 LaTeX，如 \\sum_{k=1}^{n} k = \\frac{n(n+1)}{2}"
       />
-      <div className="mt-4 min-h-20 rounded-lg bg-neutral-50 p-4">
+      <div className="mt-4 min-h-20 rounded-lg bg-white/5 p-4">
         {html ? (
           <div dangerouslySetInnerHTML={{ __html: html }} className="overflow-x-auto" />
         ) : (
-          <p className="text-sm text-red-600">LaTeX 语法有误，请检查。</p>
+          <p className="text-sm text-red-400">LaTeX 语法有误，请检查。</p>
         )}
       </div>
       <Button
@@ -105,7 +105,7 @@ function Calculator() {
   }, [expr])
 
   return (
-    <section className="rounded-xl border border-neutral-200 p-5">
+    <section className="rounded-lg border border-white/10 p-5">
       <h2 className="font-medium">计算器</h2>
       <div className="mt-3 flex gap-2">
         <Input
@@ -128,17 +128,17 @@ function Calculator() {
           计算
         </Button>
       </div>
-      <div className="mt-3 rounded-lg bg-neutral-950 px-4 py-3 font-mono text-lg text-white">
-        {result ?? <span className="text-sm text-neutral-500">表达式不完整或有误</span>}
+      <div className="mt-3 rounded-lg bg-black/60 px-4 py-3 font-mono text-lg text-white">
+        {result ?? <span className="text-sm text-neutral-400">表达式不完整或有误</span>}
       </div>
       <p className="mt-2 text-xs text-neutral-400">
         支持 + − * / ^、括号与 sin cos tan exp ln log sqrt abs 等函数；按回车记录历史。
       </p>
       {history.length > 0 && (
-        <ul className="mt-4 divide-y divide-neutral-100 border-t border-neutral-100 font-mono text-sm">
+        <ul className="mt-4 divide-y divide-white/5 border-t border-white/5 font-mono text-sm">
           {history.map((h, i) => (
             <li key={i} className="flex justify-between gap-4 py-2">
-              <span className="truncate text-neutral-500">{h.expr}</span>
+              <span className="truncate text-neutral-400">{h.expr}</span>
               <span className="shrink-0 font-medium">{h.result}</span>
             </li>
           ))}

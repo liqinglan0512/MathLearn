@@ -1,6 +1,31 @@
 export type Difficulty = '入门' | '基础' | '提高' | '冲刺' | '决赛'
-export type Chapter = '数学分析' | '高等代数' | '解析几何' | '组合数学' | '数论' | '概率统计'
+export type Chapter =
+  | '数学分析'
+  | '高等代数'
+  | '线性代数'
+  | '高等数学'
+  | '解析几何'
+  | '组合数学'
+  | '数论'
+  | '概率论'
+  | '数理统计'
+  | '概率统计'
+  | '常微分方程'
 export type Competition = '全国大学生数学竞赛' | '各省赛区预赛' | '数学建模竞赛' | '丘成桐大学生数学竞赛' | '考研数学'
+
+export interface Paper {
+  id: string
+  title: string
+  competition: Competition
+  year: number
+  description: string
+  content: string // Markdown + LaTeX 整卷/套题内容
+  attachments: Attachment[]
+  createdAt: number
+  authorId: string
+  authorName: string
+}
+
 
 export interface Problem {
   id: string
@@ -61,6 +86,17 @@ export interface User {
   createdAt: number
 }
 
-export const CHAPTERS: Chapter[] = ['数学分析', '高等代数', '解析几何', '组合数学', '数论', '概率统计']
+export const CHAPTERS: Chapter[] = [
+  '数学分析',
+  '高等代数',
+  '线性代数',
+  '高等数学',
+  '解析几何',
+  '组合数学',
+  '数论',
+  '概率论',
+  '数理统计',
+  '常微分方程',
+]
 export const DIFFICULTIES: Difficulty[] = ['入门', '基础', '提高', '冲刺', '决赛']
 export const COMPETITIONS: Competition[] = ['全国大学生数学竞赛', '各省赛区预赛', '数学建模竞赛', '丘成桐大学生数学竞赛', '考研数学']
