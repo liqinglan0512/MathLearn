@@ -74,7 +74,11 @@ seedArticles.forEach((a) => {
     ].join('\n'),
   )
 
-  getEuclidBlocks(a.id).forEach((block) => check(`euclid-block:${block.id}`, block.content))
+  getEuclidBlocks(a.id).forEach((block) => {
+    check(`euclid-block:${block.id}`, block.content)
+    if (block.originalContent) check(`euclid-original:${block.id}`, block.originalContent)
+    if (block.modernContent) check(`euclid-historical-modern:${block.id}`, block.modernContent)
+  })
   const enrichment = getEuclidEnrichment(a.id)
   if (enrichment) {
     enrichment.alternativeProofs.forEach((proof) => check(`euclid-alternative:${proof.id}`, proof.content))

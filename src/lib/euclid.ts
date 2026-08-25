@@ -1,4 +1,5 @@
 import euclidCorpusJson from './euclid-data.json?raw'
+import euclidModernChineseJson from './euclid-modern-zh.json?raw'
 import type { Article } from './types'
 
 export type EuclidEntryKind = 'proposition' | 'definition' | 'postulate' | 'common-notion'
@@ -41,6 +42,15 @@ export interface EuclidEntry {
   historicalChineseStatement?: string
   historicalChineseProof?: string
   historicalChineseSourceUrl?: string
+}
+
+export interface EuclidModernChinese {
+  statement: string
+  proofParagraphs: string[]
+  historicalModernParagraphs: string[]
+  historicalModernStatement?: string
+  proofByBlockId?: Record<string, string>
+  historicalByBlockId?: Record<string, string>
 }
 
 export interface EuclidBook {
@@ -90,6 +100,8 @@ export interface EuclidBlock {
   kind: EuclidBlockKind
   title: string
   content: string
+  originalContent?: string
+  modernContent?: string
   version: string
   citations: string[]
 }
@@ -123,6 +135,9 @@ interface EuclidCorpus {
 }
 
 const corpus = JSON.parse(euclidCorpusJson) as EuclidCorpus
+const modernChineseCorpus = JSON.parse(euclidModernChineseJson) as {
+  entries: Record<string, EuclidModernChinese>
+}
 const entriesById = new Map(corpus.entries.map((entry) => [entry.id, entry]))
 const dependentIdsById = new Map<string, string[]>()
 
@@ -147,6 +162,10 @@ export function getEuclidProposition(id: string | undefined): EuclidEntry | unde
 
 export function getEuclidEntry(id: string | undefined): EuclidEntry | undefined {
   return getEuclidProposition(id)
+}
+
+export function getEuclidModernChinese(id: string | undefined): EuclidModernChinese | undefined {
+  return id ? modernChineseCorpus.entries[id] : undefined
 }
 
 export function getEuclidDependencies(id: string | undefined): EuclidEntry[] {
@@ -239,14 +258,23 @@ function blockCitations(content: string): string[] {
   return [...found]
 }
 
-function createBlock(id: string, kind: EuclidBlockKind, title: string, content: string): EuclidBlock {
+function createBlock(
+  id: string,
+  kind: EuclidBlockKind,
+  title: string,
+  content: string,
+  originalContent?: string,
+  modernContent?: string,
+): EuclidBlock {
   return {
     id,
     kind,
     title,
     content,
-    version: stableContentVersion(`${kind}\n${content}`),
-    citations: blockCitations(content),
+    ...(originalContent ? { originalContent } : {}),
+    ...(modernContent ? { modernContent } : {}),
+    version: stableContentVersion(`${kind}\n${content}\n${modernContent ?? ''}`),
+    citations: [...new Set(blockCitations([content, originalContent, modernContent].filter(Boolean).join('\n')))],
   }
 }
 
@@ -267,6 +295,7 @@ const blocksById = new Map<string, EuclidBlock[]>()
 export function getEuclidBlocks(id: string | undefined): EuclidBlock[] {
   const entry = getEuclidProposition(id)
   if (!entry) return []
+  const modernChinese = getEuclidModernChinese(entry.id)
 
   const cached = blocksById.get(entry.id)
   if (cached) return cached
@@ -276,11 +305,20 @@ export function getEuclidBlocks(id: string | undefined): EuclidBlock[] {
     ? '> 官方 Perseus TEI 保留了本条编号，但其正文只有一个空段落；现有来源不足以恢复原文，因此不编造内容。'
     : [
         `**${entry.title}。**`,
+        ...(modernChinese?.statement ? [modernChinese.statement] : [`> Heath 原文：${entry.statement}`]),
         ...(entry.historicalChineseStatement ? [`历史中译：${entry.historicalChineseStatement}`] : []),
-        `> Heath 原文：${entry.statement}`,
+        ...(modernChinese?.historicalModernStatement
+          ? [`古文现代白话解读（机器辅助）：${modernChinese.historicalModernStatement}`]
+          : []),
       ].join('\n\n')
   const blocks: EuclidBlock[] = [
-    createBlock(`${entry.id}.statement`, statementKind, `${chineseKind(entry.kind)}陈述`, statementText),
+    createBlock(
+      `${entry.id}.statement`,
+      statementKind,
+      `${chineseKind(entry.kind)}陈述`,
+      statementText,
+      !entry.sourceMissing && modernChinese?.statement ? entry.statement : undefined,
+    ),
   ]
 
   const paragraphs = entry.proof.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean)
@@ -292,25 +330,34 @@ export function getEuclidBlocks(id: string | undefined): EuclidBlock[] {
     const finalParagraph = index === paragraphs.length - 1
 
     if (finalParagraph && isConclusionParagraph(paragraph)) {
-      blocks.push(createBlock(`${entry.id}.conclusion`, 'conclusion', '结论', paragraph))
+      const blockId = `${entry.id}.conclusion`
+      const translated = modernChinese?.proofByBlockId?.[blockId] ?? modernChinese?.proofParagraphs[index]
+      blocks.push(createBlock(blockId, 'conclusion', '结论', translated ?? paragraph, translated ? paragraph : undefined))
       continue
     }
 
     if (isConstructionParagraph(paragraph)) {
       constructionIndex += 1
+      const blockId = `${entry.id}.construction.${constructionIndex}`
+      const translated = modernChinese?.proofByBlockId?.[blockId] ?? modernChinese?.proofParagraphs[index]
       blocks.push(
         createBlock(
-          `${entry.id}.construction.${constructionIndex}`,
+          blockId,
           'construction',
           `作图与构造 ${constructionIndex}`,
-          paragraph,
+          translated ?? paragraph,
+          translated ? paragraph : undefined,
         ),
       )
       continue
     }
 
     proofIndex += 1
-    blocks.push(createBlock(`${entry.id}.proof.${proofIndex}`, 'proof', `证明 ${proofIndex}`, paragraph))
+    const blockId = `${entry.id}.proof.${proofIndex}`
+    const translated = modernChinese?.proofByBlockId?.[blockId] ?? modernChinese?.proofParagraphs[index]
+    blocks.push(
+      createBlock(blockId, 'proof', `证明 ${proofIndex}`, translated ?? paragraph, translated ? paragraph : undefined),
+    )
   }
 
   if (entry.historicalChineseProof) {
@@ -321,12 +368,17 @@ export function getEuclidBlocks(id: string | undefined): EuclidBlock[] {
 
     for (let index = 0; index < historicalParagraphs.length; index += 1) {
       const content = linkHistoricalReferences(historicalParagraphs[index], entry.book)
+      const blockId = `${entry.id}.historical.${index + 1}`
+      const modernInterpretation =
+        modernChinese?.historicalByBlockId?.[blockId] ?? modernChinese?.historicalModernParagraphs[index]
       blocks.push(
         createBlock(
-          `${entry.id}.historical.${index + 1}`,
+          blockId,
           'historical',
           `徐光启、利玛窦历史中译 ${index + 1}`,
           content,
+          undefined,
+          modernInterpretation,
         ),
       )
     }
@@ -340,7 +392,11 @@ export function getEuclidBlocks(id: string | undefined): EuclidBlock[] {
   if (entry.historicalChineseSourceUrl) {
     provenance.push(`- [可核验的徐光启、利玛窦历史中译](${entry.historicalChineseSourceUrl})`)
   } else if (entry.kind === 'proposition') {
-    provenance.push('- 没有可逐题核验的公开中文古译时，保留真实英文证明，不冒充已完成中文全译。')
+    provenance.push(
+      modernChinese
+        ? '- 本条没有可逐题核验的历史中文古译；已提供依据 Heath 英译底本制作的现代中文，以及逐段对应的英文原文。'
+        : '- 本条没有可逐题核验的历史中文古译；保留真实英文底本与可追溯出处。',
+    )
   }
   blocks.push(createBlock(`${entry.id}.source`, 'source', '来源、译者与开放许可', provenance.join('\n')))
 
@@ -406,8 +462,10 @@ export function getEuclidEnrichment(id: string | undefined): EuclidEnrichment | 
 }
 
 function articleContent(entry: EuclidEntry): string {
+  const modernChinese = getEuclidModernChinese(entry.id)
   const sections = [
     `## ${chineseKind(entry.kind)} ${citationLabel(entry)}：问题是什么`,
+    ...(modernChinese && !entry.sourceMissing ? [`**现代中文：** ${modernChinese.statement}`] : []),
     entry.historicalChineseStatement
       ? `**历史中译命题：** ${entry.historicalChineseStatement}`
       : `**中文导读：** ${entry.title}。`,
@@ -434,6 +492,9 @@ function articleContent(entry: EuclidEntry): string {
   }
 
   if (entry.proof) {
+    if (modernChinese?.proofParagraphs.length) {
+      sections.push('## 现代中文证明：机器辅助翻译', modernChinese.proofParagraphs.join('\n\n'))
+    }
     sections.push('## 原始证明：Heath 英译', entry.proof)
   }
 
@@ -457,7 +518,11 @@ function articleContent(entry: EuclidEntry): string {
   if (entry.historicalChineseSourceUrl) {
     sourceLinks.push(`- [查阅本卷历史中文原文](${entry.historicalChineseSourceUrl})`)
   } else if (entry.kind === 'proposition') {
-    sourceLinks.push('- 当前尚无经过逐条核验、可以公开复用的对应中文古译；因此保留真实英文证明，不冒充已完成中文全译。')
+    sourceLinks.push(
+      modernChinese
+        ? '- 本条没有可逐题核验的历史中文古译；现代中文依据 Heath 英译底本制作，完整英文原文仍逐段保留。'
+        : '- 本条没有可逐题核验的历史中文古译；保留完整 Heath 英译底本与来源。',
+    )
   }
 
   sections.push('## 来源、版本与授权', ...sourceLinks)
@@ -469,18 +534,25 @@ let cachedArticles: Article[] | undefined
 export function getEuclidArticles(): Article[] {
   if (!cachedArticles) {
     const baseTimestamp = Date.UTC(2025, 0, 1)
-    cachedArticles = EUCLID_ENTRIES.map((entry, index) => ({
-      id: entry.id,
-      title: `${entry.title} · ${citationLabel(entry)}`,
-      summary: entry.historicalChineseStatement
-        ? entry.historicalChineseStatement
-        : `《几何原本》第 ${entry.book} 卷 · ${chineseKind(entry.kind)} ${entry.proposition}：${entry.title}。附 Heath 原文${entry.proof ? '与完整证明' : ''}及可追溯来源。`,
-      content: articleContent(entry),
-      topic: '解析几何',
-      authorId: 'euclid-perseus',
-      authorName: '欧几里得 · Heath 英译',
-      createdAt: baseTimestamp - index * 60_000,
-    }))
+    cachedArticles = EUCLID_ENTRIES.map((entry, index) => {
+      const modernChinese = getEuclidModernChinese(entry.id)
+      return {
+        id: entry.id,
+        title: `${entry.title} · ${citationLabel(entry)}`,
+        summary: modernChinese && !entry.sourceMissing
+          ? modernChinese.statement.length > 100
+            ? `${modernChinese.statement.slice(0, 99)}…`
+            : modernChinese.statement
+          : entry.historicalChineseStatement
+            ? entry.historicalChineseStatement
+            : `《几何原本》第 ${entry.book} 卷 · ${chineseKind(entry.kind)} ${entry.proposition}：${entry.title}。附 Heath 原文${entry.proof ? '与完整证明' : ''}及可追溯来源。`,
+        content: articleContent(entry),
+        topic: '解析几何' as const,
+        authorId: 'euclid-perseus',
+        authorName: '欧几里得 · Heath 英译 / 现代中译',
+        createdAt: baseTimestamp - index * 60_000,
+      }
+    })
   }
   return cachedArticles
 }

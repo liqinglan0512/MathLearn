@@ -8,10 +8,37 @@ export interface ReadingSemanticBlock {
   content: string
   version: string
   citations: string[]
+  originalContent?: string
+  modernContent?: string
 }
 
 function derivedBlock(id: string, kind: string, title: string, content: string, citations: string[] = []): ReadingSemanticBlock {
   return { id, kind, title, content, citations, version: getPassageBlockVersion(`${kind}\n${content}`) }
+}
+
+function extractCitationIds(content: string): string[] {
+  return [...new Set(Array.from(content.matchAll(/\/principles\/(euclid-[a-z0-9-]+)/g), (match) => match[1]))]
+}
+
+function expandHistoricalInterpretations(blocks: readonly ReadingSemanticBlock[]): ReadingSemanticBlock[] {
+  const expanded: ReadingSemanticBlock[] = []
+
+  for (const block of blocks) {
+    expanded.push(block)
+    if (block.kind !== 'historical' || !block.modernContent?.trim()) continue
+
+    const ordinal = block.id.split('.').at(-1) ?? ''
+    const citations = [...new Set([...block.citations, ...extractCitationIds(block.modernContent)])]
+    expanded.push(derivedBlock(
+      `${block.id}.modern`,
+      'historical-modern',
+      `现代汉语解读 ${ordinal}`,
+      block.modernContent,
+      citations,
+    ))
+  }
+
+  return expanded
 }
 
 export function getArticleReadingBlocks(articleId: string, content: string): ReadingSemanticBlock[] {
@@ -21,7 +48,7 @@ export function getArticleReadingBlocks(articleId: string, content: string): Rea
   }
 
   const enrichment = getEuclidEnrichment(articleId)
-  if (!enrichment) return originalBlocks
+  if (!enrichment) return expandHistoricalInterpretations(originalBlocks)
 
   const core = originalBlocks.filter((block) => block.kind !== 'historical' && block.kind !== 'source')
   const supplemental: ReadingSemanticBlock[] = [
@@ -46,7 +73,7 @@ export function getArticleReadingBlocks(articleId: string, content: string): Rea
     )),
   ]
   const historicalAndSource = originalBlocks.filter((block) => block.kind === 'historical' || block.kind === 'source')
-  return [...core, ...supplemental, ...historicalAndSource]
+  return expandHistoricalInterpretations([...core, ...supplemental, ...historicalAndSource])
 }
 
 function entryKindLabel(entry: EuclidEntry) {

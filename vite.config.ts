@@ -13,6 +13,7 @@ export default defineConfig({
         manualChunks(id) {
           const normalizedId = id.replaceAll('\\', '/')
           if (normalizedId.includes('/src/lib/euclid-data.json')) return 'euclid-corpus'
+          if (normalizedId.includes('/src/lib/euclid-modern-zh.json')) return 'euclid-modern-zh'
           if (normalizedId.includes('/node_modules/')) return 'vendor'
         },
       },

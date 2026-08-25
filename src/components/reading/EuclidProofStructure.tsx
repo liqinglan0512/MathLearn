@@ -26,7 +26,8 @@ function blockFamilyLabel(kind: string) {
   if (kind === 'modern') return '现代重述'
   if (kind === 'alternative') return '另一种证明'
   if (kind === 'common-error') return '逻辑核对'
-  if (kind === 'historical') return '历史中译'
+  if (kind === 'historical') return '历史原文'
+  if (kind === 'historical-modern') return '现代汉语解读'
   if (kind === 'source') return '可核验来源'
   return '正文'
 }
@@ -45,12 +46,19 @@ export function SemanticProofBlocks({ blocks }: { blocks: readonly ReadingSemant
 
   return (
     <div className="space-y-9" aria-label="按原典段落展开的语义证明链">
+      {blocks.some((block) => Boolean(block.originalContent)) && (
+        <p className="text-xs leading-7 opacity-75" data-annotation-ui="true">
+          现代中文为机器辅助译文；每一段下方始终保留 Heath 英译底本，便于逐字核对。
+          历史古译后的白话亦为机器辅助解读，只解释紧邻的古文，不冒充人工校勘定本。
+        </p>
+      )}
       {blocks.map((block, index) => (
         <section
           key={block.id}
           data-block-id={block.id}
           data-block-version={block.version}
           data-block-kind={block.kind}
+          data-block-language="zh-CN"
           aria-label={`${blockFamilyLabel(block.kind)}：${block.title}`}
           className={`scroll-mt-24 border-l pl-4 sm:pl-6 ${
             block.kind === 'common-error'
@@ -65,9 +73,28 @@ export function SemanticProofBlocks({ blocks }: { blocks: readonly ReadingSemant
               {String(index + 1).padStart(2, '0')} · {blockFamilyLabel(block.kind)}
             </span>
             <h2 className="text-sm font-medium opacity-90">{block.title}</h2>
+            {block.kind === 'historical-modern' && (
+              <span className="text-[10px] tracking-[0.08em] opacity-65" data-translation-method="machine-assisted">
+                机器辅助
+              </span>
+            )}
           </div>
 
-          <Markdown content={block.content} />
+          <div data-reading-role={block.kind === 'historical' ? 'historical-original' : 'modern-chinese'}>
+            <Markdown content={block.content} />
+          </div>
+
+          {block.originalContent && (
+            <aside
+              data-reading-role="english-original"
+              className="mt-4 border-l border-current/15 pl-3 sm:pl-4 [&_.md]:text-[13px] [&_.md]:leading-7 [&_.md]:opacity-80"
+            >
+              <p className="text-[10px] tracking-[0.14em] opacity-65">英文原文 · Heath 底本</p>
+              <div lang="en">
+                <Markdown content={block.originalContent} />
+              </div>
+            </aside>
+          )}
 
           {block.citations.length > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px]" aria-label="本步骤引用的前置命题">

@@ -65,8 +65,7 @@ export default function Principles() {
 
   const filtered = indexedArticles.filter(({ article, euclid }) => {
     if (topic && article.topic !== topic) return false
-    if (book === 'original' && euclid) return false
-    if (book !== 'all' && book !== 'original' && euclid?.book !== Number(book)) return false
+    if (book !== 'all' && euclid?.book !== Number(book)) return false
     if (kind !== 'all' && euclid?.kind !== kind) return false
     if (!query) return true
 
@@ -91,7 +90,6 @@ export default function Principles() {
   function changeBook(nextBook: string) {
     setBook(nextBook)
     setLimit(PAGE_SIZE)
-    if (nextBook === 'original') setKind('all')
   }
 
   return (
@@ -184,7 +182,6 @@ export default function Principles() {
 
           <div className="mt-4 flex flex-wrap gap-2" aria-label="按卷册筛选">
             <IndexChip active={book === 'all'} onClick={() => changeBook('all')}>全部内容</IndexChip>
-            <IndexChip active={book === 'original'} onClick={() => changeBook('original')}>其他推导</IndexChip>
             {ROMAN_BOOKS.map((roman, index) => (
               <IndexChip key={roman} active={book === String(index + 1)} onClick={() => changeBook(String(index + 1))}>
                 {`第 ${roman} 卷`}
@@ -192,19 +189,17 @@ export default function Principles() {
             ))}
           </div>
 
-          {book !== 'original' && (
-            <div className="mt-3 flex flex-wrap gap-2" aria-label="按原典条目类型筛选">
-              {KIND_FILTERS.map((option) => (
-                <IndexChip
-                  key={option.value}
-                  active={kind === option.value}
-                  onClick={() => { setKind(option.value); setLimit(PAGE_SIZE) }}
-                >
-                  {option.label}
-                </IndexChip>
-              ))}
-            </div>
-          )}
+          <div className="mt-3 flex flex-wrap gap-2" aria-label="按原典条目类型筛选">
+            {KIND_FILTERS.map((option) => (
+              <IndexChip
+                key={option.value}
+                active={kind === option.value}
+                onClick={() => { setKind(option.value); setLimit(PAGE_SIZE) }}
+              >
+                {option.label}
+              </IndexChip>
+            ))}
+          </div>
 
           <p className="mt-4 text-[11px] leading-6 text-[#929187]">
             来源：{EUCLID_SOURCE.translator} 译本（{EUCLID_SOURCE.year}），{EUCLID_SOURCE.publisher}；
