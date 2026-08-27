@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { store, uid } from '@/lib/store'
 import { CHAPTERS, COMPETITIONS, DIFFICULTIES, type Attachment, type Chapter, type Competition, type Difficulty, type Problem } from '@/lib/types'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -47,7 +47,7 @@ export default function NewProblem() {
       authorId: user!.id,
     }
     try {
-      store.addProblem(p)
+      store.addProblem(user, p)
       nav(`/problems/${p.id}`)
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : '保存失败')
@@ -56,8 +56,8 @@ export default function NewProblem() {
 
   return (
     <div className="mx-auto max-w-3xl py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">上传题目</h1>
-      <p className="mt-1 text-sm text-neutral-400">支持 Markdown + LaTeX 题干，可附 PDF 或图片。</p>
+      <h1 className="text-2xl font-semibold tracking-tight">提交题目审核</h1>
+      <p className="mt-1 text-sm text-neutral-400">保存为待审核内容，不会自动公开；附件当前关闭。</p>
       <form onSubmit={submit} className="mt-8 space-y-6">
         <div>
           <Label>标题</Label>
@@ -100,7 +100,7 @@ export default function NewProblem() {
         </div>
         {err && <p className="text-sm text-red-400">{err}</p>}
         <div className="flex gap-3">
-          <Button type="submit">发布题目</Button>
+          <Button type="submit">提交审核</Button>
           <Button type="button" variant="ghost" onClick={() => nav(-1)}>取消</Button>
         </div>
       </form>

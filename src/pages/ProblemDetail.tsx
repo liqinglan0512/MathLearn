@@ -12,7 +12,9 @@ import {
   recordProofReview, setKnowledgeStatus, type KnowledgeNode, type KnowledgeStatus,
   type ProblemLearningProfile, type ProofVerification,
 } from '@/lib/learning'
-import { useAuth } from '@/lib/auth'
+import { canUseAdminContentManagement } from '@/lib/permissions'
+import { FEATURES } from '@/config/features'
+import { useAuth } from '@/lib/auth-context'
 import { Markdown } from '@/components/Markdown'
 import { MathProse } from '@/components/reading/MathProse'
 import { AttachmentList } from '@/components/Attachments'
@@ -169,9 +171,11 @@ export default function ProblemDetail() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <SectionHeading id="solutions-heading" eyebrow="PROOF AUDIT" title={`解法比较 · ${solutions.length}`}
                 description="发布来源不等于正确性；每份证明都需要逐步核对。" />
-              <Button size="sm" onClick={() => nav(user ? `/problems/${problem.id}/new-solution` : '/login')}>
-                <PenLine className="mr-1 h-4 w-4" /> 提交解法
-              </Button>
+              {FEATURES.publicContribution && (
+                <Button size="sm" onClick={() => nav(user ? `/problems/${problem.id}/new-solution` : '/login')}>
+                  <PenLine className="mr-1 h-4 w-4" /> 提交解法审核
+                </Button>
+              )}
             </div>
             {solutions.length === 0 ? <p className="mt-7 py-8 text-sm text-[#96958d]">还没有解法，可以沿提示阶梯留下第一份证明。</p> : (
               <div className="mt-7 space-y-5">
@@ -291,6 +295,7 @@ function SolutionCard({ index, solution, onChange }: {
   const status = review?.status ?? 'unreviewed'
   const proofComments = store.comments().filter((comment) => comment.targetId === solution.id)
   const isOwnSolution = user?.id === solution.authorId
+  const canModerate = canUseAdminContentManagement(user)
 
   function submitConcern(event: FormEvent) {
     event.preventDefault()
@@ -305,13 +310,12 @@ function SolutionCard({ index, solution, onChange }: {
 
   function verify(nextStatus: ProofVerification) {
     if (!user) return nav('/login')
+    if (!canModerate) return setAuditNotice('审核状态只能由本地管理员编辑工作流修改。')
     if (isOwnSolution) return setAuditNotice('作者不能为自己的解法完成独立核验。')
-    if ((nextStatus === 'editor_checked' || nextStatus === 'rigorous') && !user.isAdmin)
-      return setAuditNotice('编辑复核需要对应权限。')
     if (checkedItems.length !== PROOF_CHECKS.length)
       return setAuditNotice('请先逐条确认四项条件；来源或点赞数不能代替证明审计。')
     recordProofReview({ solutionId: solution.id, status: nextStatus, reviewerId: user.id,
-      reviewerName: user.name, checkedAt: Date.now(), checks: checkedItems })
+      reviewerName: user.name, checkedAt: Date.now(), checks: checkedItems }, user)
     setAuditNotice('已记录核验人、时间与检查项。')
     onChange()
   }
@@ -342,10 +346,13 @@ function SolutionCard({ index, solution, onChange }: {
         <input type="checkbox" checked={checkedItems.includes(check)} className="mt-[3px] accent-[#c7ad70]"
           onChange={(event) => setCheckedItems((current) => event.target.checked ? [...current, check] : current.filter((item) => item !== check))} />{check}
       </label>)}</div>
-      <div className="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={isOwnSolution} onClick={() => verify('community_checked')}>记录社区核查</Button>
-        {user?.isAdmin && <><Button size="sm" variant="outline" disabled={isOwnSolution} onClick={() => verify('editor_checked')}>编辑复核</Button>
-          <Button size="sm" disabled={isOwnSolution} onClick={() => verify('rigorous')}>确认严格证明</Button></>}
-      </div>
+      {canModerate && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={isOwnSolution} onClick={() => verify('community_checked')}>记录社区核查</Button>
+          <Button size="sm" variant="outline" disabled={isOwnSolution} onClick={() => verify('editor_checked')}>编辑复核</Button>
+          <Button size="sm" disabled={isOwnSolution} onClick={() => verify('rigorous')}>确认严格证明</Button>
+        </div>
+      )}
       {proofComments.length > 0 && <div className="mt-5 space-y-3"><p className="text-[12px] font-medium text-[#ded9cc]">步骤疑点与讨论</p>
         {proofComments.map((comment) => <div key={comment.id} className="border-l border-[#c7ad70]/35 pl-3">
           <p className="text-[11px] text-[#96958d]">{comment.authorName} · {fmt(comment.createdAt)}</p>

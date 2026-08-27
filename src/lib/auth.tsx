@@ -1,19 +1,8 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { store, uid } from './store'
 import type { User } from './types'
-
-interface AuthCtx {
-  user: User | null
-  login: (account: string, password: string) => string | null
-  register: (name: string, account: string, password: string) => string | null
-  logout: () => void
-}
-
-const Ctx = createContext<AuthCtx>(null as unknown as AuthCtx)
-
-export function isValidAccount(account: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account) || /^1\d{10}$/.test(account)
-}
+import { AuthContext, type AuthContextValue } from './auth-context'
+import { isValidAccount } from './auth-validation'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
@@ -21,7 +10,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return id ? (store.users().find((u) => u.id === id) ?? null) : null
   })
 
-  const api = useMemo<AuthCtx>(
+  const api = useMemo<AuthContextValue>(
     () => ({
       user,
       login(account, password) {
@@ -52,7 +41,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user],
   )
 
-  return <Ctx.Provider value={api}>{children}</Ctx.Provider>
+  return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>
 }
-
-export const useAuth = () => useContext(Ctx)

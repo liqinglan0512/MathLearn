@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type M
 import { Link } from 'react-router'
 import { Highlighter, LogIn, MessageCircle, MessageSquareText, Send, X } from 'lucide-react'
 import { MathProse } from './MathProse'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import {
   createPassageAnnotation,
   getPassageAnnotations,

@@ -10,11 +10,12 @@ import {
   getProblemLearningProfile,
 } from '@/lib/learning'
 import { CHAPTERS, COMPETITIONS, DIFFICULTIES } from '@/lib/types'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { MathProse } from '@/components/reading/MathProse'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { FEATURES } from '@/config/features'
 
 const DIFF_STYLE: Record<string, string> = {
   入门: 'border-[#9bbba1]/20 bg-[#9bbba1]/[0.07] text-[#afc3ae]',
@@ -59,9 +60,11 @@ export default function Problems() {
           <h1 className="mt-2 text-[2rem] font-semibold tracking-[-0.045em] text-[#f0e8d3]">从一道题开始</h1>
           <p className="mt-2 text-[13px] leading-6 text-[#96958d]">看见题目背后的前置知识，再沿着推导找到缺失的那一步。</p>
         </div>
-        <Button size="sm" onClick={() => nav(user ? '/problems/new' : '/login')}>
-          <Plus className="mr-1 h-4 w-4" /> 上传题目
-        </Button>
+        {FEATURES.publicContribution && (
+          <Button size="sm" onClick={() => nav(user ? '/problems/new' : '/login')}>
+            <Plus className="mr-1 h-4 w-4" /> 提交题目审核
+          </Button>
+        )}
       </div>
 
       <KnowledgeSnapshot onChooseKnowledge={setKnowledgeFilter} />

@@ -5,10 +5,11 @@ import { EUCLID_SOURCE } from '@/lib/euclid'
 import { getArticleLearningProfile, getLabMeta } from '@/lib/learning'
 import { store } from '@/lib/store'
 import { CHAPTERS } from '@/lib/types'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { MathProse } from '@/components/reading/MathProse'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { FEATURES } from '@/config/features'
 
 type EuclidKind = 'proposition' | 'definition' | 'postulate' | 'common-notion'
 
@@ -102,9 +103,11 @@ export default function Principles() {
             不从结论出发。先弄明白问题为什么出现，再让定义、条件和证明一步步长出来。
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={() => nav(user ? '/principles/new' : '/login')}>
-          <PenLine className="mr-1 h-4 w-4" /> 写推导
-        </Button>
+        {FEATURES.publicContribution && (
+          <Button size="sm" variant="outline" onClick={() => nav(user ? '/principles/new' : '/login')}>
+            <PenLine className="mr-1 h-4 w-4" /> 提交推导审核
+          </Button>
+        )}
       </div>
 
       <section className="mt-12 grid gap-6 border-y border-white/[0.07] py-7 sm:grid-cols-3" aria-label="阅读方法">

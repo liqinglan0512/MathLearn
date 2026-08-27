@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Sigma } from 'lucide-react'
-import { useAuth, isValidAccount } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
+import { isValidAccount } from '@/lib/auth-validation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,7 +25,7 @@ export default function Login() {
     <div className="mx-auto max-w-sm py-16">
       <Sigma className="mx-auto h-8 w-8 text-indigo-300" />
       <h1 className="mt-4 text-center text-2xl font-semibold">登录 MathForge</h1>
-      <p className="mt-2 text-center text-sm text-neutral-400">登录后可上传解法、参与讨论</p>
+      <p className="mt-2 text-center text-sm text-neutral-400">登录后可保存批注、参与已有内容讨论</p>
       <form onSubmit={submit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="account">邮箱或手机号</Label>

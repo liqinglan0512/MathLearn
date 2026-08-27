@@ -2,10 +2,11 @@ import { Link, useNavigate } from 'react-router'
 import { ArrowRight, Clock3, FileStack, Plus } from 'lucide-react'
 import { parsePaperQuestions, recommendedMinutes } from '@/lib/exam'
 import { store } from '@/lib/store'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { MathProse } from '@/components/reading/MathProse'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { FEATURES } from '@/config/features'
 
 export default function Papers() {
   const { user } = useAuth()
@@ -22,9 +23,11 @@ export default function Papers() {
             阅读原卷，或者开始一次可记录逐题用时、得分点与错因的完整训练。
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={() => nav(user ? '/papers/new' : '/login')}>
-          <Plus className="mr-1 h-4 w-4" /> 上传试卷
-        </Button>
+        {FEATURES.publicContribution && (
+          <Button size="sm" variant="outline" onClick={() => nav(user ? '/papers/new' : '/login')}>
+            <Plus className="mr-1 h-4 w-4" /> 提交试卷审核
+          </Button>
+        )}
       </div>
 
       <div className="mt-11 divide-y divide-white/[0.07] border-t border-white/[0.07]">
@@ -56,7 +59,7 @@ export default function Papers() {
           )
         })}
         {papers.length === 0 && (
-          <p className="py-16 text-center text-sm text-[#99968c]">还没有试卷，来上传第一套。</p>
+          <p className="py-16 text-center text-sm text-[#99968c]">当前没有可公开阅读的试卷。</p>
         )}
       </div>
     </div>

@@ -1,8 +1,9 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { useState } from 'react'
 import { Menu, X, Sigma, User as UserIcon, LogOut, PenLine } from 'lucide-react'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
+import { FEATURES } from '@/config/features'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,15 +54,19 @@ export default function Layout() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => nav('/problems?new=1')}>
-                    <PenLine className="mr-2 h-4 w-4" /> 上传题目
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => nav('/papers/new')}>
-                    <PenLine className="mr-2 h-4 w-4" /> 上传试卷
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => nav('/principles/new')}>
-                    <PenLine className="mr-2 h-4 w-4" /> 写推导长文
-                  </DropdownMenuItem>
+                  {FEATURES.publicContribution && (
+                    <>
+                      <DropdownMenuItem onClick={() => nav('/problems/new')}>
+                        <PenLine className="mr-2 h-4 w-4" /> 提交题目审核
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => nav('/papers/new')}>
+                        <PenLine className="mr-2 h-4 w-4" /> 提交试卷审核
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => nav('/principles/new')}>
+                        <PenLine className="mr-2 h-4 w-4" /> 提交推导审核
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem
                     onClick={() => {
                       logout()
@@ -114,8 +119,11 @@ export default function Layout() {
       <main className="mx-auto max-w-5xl px-4 pb-24">
         <Outlet />
       </main>
-      <footer className="site-footer py-9 text-center text-[12px] tracking-[0.025em] text-[#74756e]">
-        MathForge · 让理解先于记忆
+      <footer className="site-footer px-4 py-9 text-center text-[12px] tracking-[0.025em] text-[#74756e]">
+        <p className="mx-auto max-w-2xl leading-6">
+          当前为 MathForge 本地测试版本。账户、批注和学习数据仅保存在当前浏览器中，请勿视为长期云端存储。
+        </p>
+        <p className="mt-2">MathForge · 让理解先于记忆</p>
       </footer>
     </div>
   )

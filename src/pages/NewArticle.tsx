@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { store, uid } from '@/lib/store'
 import { CHAPTERS, type Article, type Chapter } from '@/lib/types'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,7 +38,7 @@ export default function NewArticle() {
       createdAt: Date.now(),
     }
     try {
-      store.addArticle(a)
+      store.addArticle(user, a)
       nav(`/principles/${a.id}`)
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : '保存失败')
@@ -80,7 +80,7 @@ export default function NewArticle() {
         </div>
         {err && <p className="text-sm text-red-400">{err}</p>}
         <div className="flex gap-3">
-          <Button type="submit">发布推导</Button>
+          <Button type="submit">提交审核</Button>
           <Button type="button" variant="ghost" onClick={() => nav(-1)}>取消</Button>
         </div>
       </form>

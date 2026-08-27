@@ -16,6 +16,8 @@ import ArticleDetail from '@/pages/ArticleDetail'
 import NewArticle from '@/pages/NewArticle'
 import Viz from '@/pages/Viz'
 import Tools from '@/pages/Tools'
+import { FeatureRoute } from '@/components/auth/FeatureRoute'
+import { FEATURES } from '@/config/features'
 
 export default function App() {
   return (
@@ -26,14 +28,14 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/problems" element={<Problems />} />
-          <Route path="/problems/new" element={<NewProblem />} />
+          <Route path="/problems/new" element={<FeatureRoute enabled={FEATURES.publicContribution}><NewProblem /></FeatureRoute>} />
           <Route path="/problems/:id" element={<ProblemDetail />} />
-          <Route path="/problems/:id/new-solution" element={<NewSolution />} />
+          <Route path="/problems/:id/new-solution" element={<FeatureRoute enabled={FEATURES.publicContribution}><NewSolution /></FeatureRoute>} />
           <Route path="/papers" element={<Papers />} />
-          <Route path="/papers/new" element={<NewPaper />} />
+          <Route path="/papers/new" element={<FeatureRoute enabled={FEATURES.publicContribution}><NewPaper /></FeatureRoute>} />
           <Route path="/papers/:id" element={<PaperDetail />} />
           <Route path="/principles" element={<Principles />} />
-          <Route path="/principles/new" element={<NewArticle />} />
+          <Route path="/principles/new" element={<FeatureRoute enabled={FEATURES.publicContribution}><NewArticle /></FeatureRoute>} />
           <Route path="/principles/:id" element={<ArticleDetail />} />
           <Route path="/viz" element={<Viz />} />
           <Route path="/tools" element={<Tools />} />

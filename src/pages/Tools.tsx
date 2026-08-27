@@ -39,7 +39,7 @@ function FormulaEditor() {
   const html = useMemo(() => {
     try {
       return katex.renderToString(tex, { displayMode: true, throwOnError: true })
-    } catch (e) {
+    } catch {
       return null
     }
   }, [tex])

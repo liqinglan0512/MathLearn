@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { store, uid } from '@/lib/store'
 import { COMPETITIONS, type Attachment, type Competition, type Paper } from '@/lib/types'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,7 +29,7 @@ export default function NewPaper() {
   function submit(e: FormEvent) {
     e.preventDefault()
     if (!title.trim()) return setErr('请填写试卷标题')
-    if (!content.trim() && attachments.length === 0) return setErr('请填写试卷内容或上传 PDF 附件')
+    if (!content.trim()) return setErr('请填写试卷内容')
     const p: Paper = {
       id: uid(),
       title: title.trim(),
@@ -43,7 +43,7 @@ export default function NewPaper() {
       authorName: user!.name,
     }
     try {
-      store.addPaper(p)
+      store.addPaper(user, p)
       nav(`/papers/${p.id}`)
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : '保存失败')
@@ -52,9 +52,9 @@ export default function NewPaper() {
 
   return (
     <div className="mx-auto max-w-3xl py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">上传试卷 / 套题</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">提交试卷审核</h1>
       <p className="mt-1 text-sm text-neutral-400">
-        整套试题直接写在正文里（Markdown + LaTeX），也可以附上原版 PDF。
+        整套试题直接写在正文里（Markdown + LaTeX）。保存为待审核内容，不会自动公开。
       </p>
       <form onSubmit={submit} className="mt-8 space-y-6">
         <div>
@@ -93,7 +93,7 @@ export default function NewPaper() {
         </div>
         {err && <p className="text-sm text-red-400">{err}</p>}
         <div className="flex gap-3">
-          <Button type="submit">发布试卷</Button>
+          <Button type="submit">提交审核</Button>
           <Button type="button" variant="ghost" onClick={() => nav(-1)}>取消</Button>
         </div>
       </form>

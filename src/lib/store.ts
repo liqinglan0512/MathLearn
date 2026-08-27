@@ -1,6 +1,7 @@
 import type { Article, Comment, Paper, Problem, Solution, User } from './types'
 import { seedArticles, seedPapers, seedProblems, seedSolutions, seedComments } from './seed'
 import { normalizeChapter } from './taxonomy'
+import { assertAttachmentsAllowed, assertCanSubmitPublicContent, type Actor } from './permissions'
 
 const KEYS = {
   problems: 'mf_problems',
@@ -108,21 +109,28 @@ export const store = {
   papers: () => read<Paper>('papers', seedPapers),
   users: () => read<User>('users', []),
 
-  addProblem(p: Problem) {
+  addProblem(actor: Actor, p: Problem) {
+    assertCanSubmitPublicContent(actor, 'problem')
+    assertAttachmentsAllowed(actor, p.attachments)
     write('problems', [p, ...store.problems()])
   },
-  addSolution(s: Solution) {
+  addSolution(actor: Actor, s: Solution) {
+    assertCanSubmitPublicContent(actor, 'solution')
+    assertAttachmentsAllowed(actor, s.attachments)
     write('solutions', [s, ...store.solutions()])
   },
   addComment(c: Comment) {
     write('comments', [...store.comments(), c])
   },
-  addArticle(a: Article) {
+  addArticle(actor: Actor, a: Article) {
+    assertCanSubmitPublicContent(actor, 'article')
     const bundledIds = new Set(seedArticles.map((article) => article.id))
     const customArticles = store.articles().filter((article) => !bundledIds.has(article.id))
     write('articles', [a, ...customArticles])
   },
-  addPaper(p: Paper) {
+  addPaper(actor: Actor, p: Paper) {
+    assertCanSubmitPublicContent(actor, 'paper')
+    assertAttachmentsAllowed(actor, p.attachments)
     write('papers', [p, ...store.papers()])
   },
   addUser(u: User) {

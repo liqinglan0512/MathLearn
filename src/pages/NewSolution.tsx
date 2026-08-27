@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { store, uid } from '@/lib/store'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 import type { Attachment, Solution } from '@/lib/types'
 import { Markdown } from '@/components/Markdown'
 import { MathProse } from '@/components/reading/MathProse'
@@ -30,7 +30,7 @@ export default function NewSolution() {
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    if (!content.trim() && attachments.length === 0) return setErr('请填写解法内容或上传附件')
+    if (!content.trim()) return setErr('请填写解法内容')
     const s: Solution = {
       id: uid(),
       problemId: problem!.id,
@@ -42,7 +42,7 @@ export default function NewSolution() {
       likes: 0,
     }
     try {
-      store.addSolution(s)
+      store.addSolution(user, s)
       nav(`/problems/${problem!.id}`)
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : '保存失败')
@@ -75,7 +75,7 @@ export default function NewSolution() {
         </div>
         {err && <p className="text-sm text-red-400">{err}</p>}
         <div className="flex gap-3">
-          <Button type="submit">发布解法</Button>
+          <Button type="submit">提交审核</Button>
           <Button type="button" variant="ghost" onClick={() => nav(-1)}>取消</Button>
         </div>
       </form>

@@ -1,6 +1,8 @@
 import { store, uid } from './store'
 import { getEuclidProposition } from './euclid'
 import type { Article, Problem, Solution } from './types'
+import type { User } from './types'
+import { assertCanModerateReview } from './permissions'
 
 export type LabId =
   | 'derivative'
@@ -758,7 +760,8 @@ export function getProofReview(solutionId: string): ProofReview | undefined {
   return readJson<Record<string, ProofReview>>(PROOF_REVIEWS_KEY, {})[solutionId]
 }
 
-export function recordProofReview(review: ProofReview): void {
+export function recordProofReview(review: ProofReview, actor: Pick<User, 'id' | 'isAdmin'> | null): void {
+  assertCanModerateReview(actor)
   const reviews = readJson<Record<string, ProofReview>>(PROOF_REVIEWS_KEY, {})
   reviews[review.solutionId] = review
   writeJson(PROOF_REVIEWS_KEY, reviews)
