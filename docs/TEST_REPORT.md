@@ -1,7 +1,7 @@
 # MathForge 0.2 测试报告
 
 记录日期：2026-08-27
-状态：最终聚合质量门与本地浏览器核心 QA 已通过；GitHub CI、线上部署验证、管理员交互式编辑器 QA 与移动端/弱网测试仍待完成。
+状态：最终聚合质量门、GitHub CI、本地与线上核心浏览器 QA、全量公网文件清单均已通过；管理员交互式编辑器 QA 与移动端/弱网测试仍待完成。
 
 ## 1. 当前自动测试
 
@@ -83,13 +83,16 @@ typecheck
 
 仍未完成的浏览器范围：管理员账户下的三栏/窄屏编辑器全流程、划线评论的真实鼠标选区回归、移动端布局、弱网与无障碍专项测试。相应纯函数与存储不变量已有自动测试，但不能冒充完整 E2E。
 
-## 5. 待线上验证
+## 5. 线上验证
 
-- GitHub Actions 首次 push/PR 的真实执行结果。
-- 生产服务器的 SPA fallback 与深链接刷新。
-- 621 个 Euclid JSON 的 MIME、缓存、压缩和完整上传。
-- 登录、权限、localStorage 数据升级与旧数据兼容的线上烟雾测试。
-- 服务器部署前后的静态文件清单与哈希一致性。
+已完成：
+
+- 提交 `5d51389bf915536f81140d052d16e1bdcaebf3ab` 的 GitHub Actions CI 成功：`https://github.com/liqinglan0512/MathLearn/actions/runs/33069675700`。
+- 公网清单核验通过：718/718 个构建文件的 HTTP 状态、MIME、字节数和 SHA-256 与本地 `dist` 一致；26/26 个关键 SPA 路由返回同一入口文件。
+- 线上浏览器复验通过：I.47、I.48、普通第一性原理 `a3`、Euclid catalog→Book I 索引懒加载，以及四条冻结投稿路由均符合本地验收结果。
+- 发布前已只读备份原线上目录：76 个文件、11,276,625 B；manifest SHA-256 为 `e7ea113f5891e4e25ab17fec67ed69929dc07edee7cf51ab97494676f1b8e24a`。
+
+仍未完成：生产登录/权限与旧 localStorage 数据升级的完整线上 E2E；缓存头、压缩协商、移动端、弱网与无障碍专项测试。这些范围不得由上述清单检查冒充已经覆盖。
 
 ## 6. 已知风险
 
@@ -100,17 +103,16 @@ typecheck
 5. **localStorage 仍是原型存储。** 浏览器数据可被清除或手工修改；editorial store 已做保守校验，但它不是服务器权限边界或持久备份。
 6. **数学内容审核不属于自动测试。** 自动检查可以发现结构、状态和引用异常，不能把机器译文自动标记为 `math_reviewed` 或 `published`。
 
-## 7. 验收记录模板
-
-最终 completion report 应追加：
+## 7. 最终验收记录
 
 ```text
-Commit / build identifier:
+Commit / build identifier: 5d51389bf915536f81140d052d16e1bdcaebf3ab
 npm run check exit code: 0
 Test files / tests: 11 / 78
 Browser QA routes and viewport: 本地桌面 Chromium；首页、目录、Book I、I.47、I.Def.1、14 篇普通推导、Book I I.1–I.10、四条冻结投稿路由
-Online smoke-test URL:
-Known failures or skipped checks:
+Online smoke-test URL: http://8.130.33.10:8090/
+Online manifest: 718/718 files; 26/26 routes; 0 failures
+Known failures or skipped checks: 管理员编辑器完整 E2E、移动端、弱网、缓存/压缩专项、生产认证与旧数据升级
 ```
 
-本地工程门与核心浏览器 QA 已有明确证据；只有线上烟雾检查和远端 CI 也完成后，才能把部署验收写为完成。任何自动检查都不代表 607 条机器内容已经通过人工数学审核。
+工程、CI、部署与核心线上 QA 已有明确证据。任何自动检查都不代表 607 条机器内容已经通过人工数学审核。

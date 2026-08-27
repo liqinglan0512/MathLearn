@@ -66,7 +66,7 @@
 | lint 0 errors | **已完成** | 本地质量门槛包含 ESLint；最终命令结果见 `docs/TEST_REPORT.md`。 |
 | dev/build/lint/typecheck/test scripts | **已完成** | `package.json` 已提供这些命令，并增加数学标记、仓库卫生与 0.2 contract 检查。 |
 | 模型、锚点、依赖、权限自动测试 | **已完成** | Vitest 覆盖 Revision、Visibility、Review、Edge、Annotation anchor、权限、编辑存储、Euclid repository、可视化 attestation、数学渲染与本地事件。 |
-| CI 配置 | **部分完成** | `.github/workflows/ci.yml` 已配置 `npm ci`、typecheck、lint、test、数学标记、仓库卫生、0.2 contracts 和 build；尚未通过本轮 GitHub 推送触发远端 CI。 |
+| CI 配置 | **已完成** | `.github/workflows/ci.yml` 已配置 `npm ci`、typecheck、lint、test、数学标记、仓库卫生、0.2 contracts 和 build；提交 `5d51389bf915536f81140d052d16e1bdcaebf3ab` 的远端 CI 已通过。 |
 
 ### Phase 5：性能与加载架构
 
@@ -241,25 +241,17 @@ I.47 的现代解释、替代证明和常见错误保留为带稳定 ID、Revisi
 | 批准发布 | **需Leo人工操作** | 人工确认当前 Revision、来源、依赖和可视化后，单独执行发布动作。 |
 | 核验交互图 | **需Leo人工操作** | 图的自由度、约束、构造顺序与命题逐项对应后，才可考虑 `verified`。 |
 | 决定生产身份与后端 | **需Leo人工操作** | 选择服务端认证、数据库、备份、审计和权限方案；不得沿用本地密码模型。 |
-| GitHub 凭据、服务器与域名操作 | **需Leo人工操作** | 确认目标仓库/分支、服务器目录、进程管理、TLS、备份和回滚窗口。 |
+| 生产域名与 TLS 决策 | **需Leo人工操作** | 当前版本已发布到 `http://8.130.33.10:8090/`；若转为正式公共服务，仍需 Leo 决定域名、HTTPS、生产身份系统与长期备份策略。 |
 
 ## 9. 发布状态行（后续执行后直接替换本节三行）
 
 <!-- RELEASE_STATUS_START -->
-- **GitHub 推送：未完成（待后续替换）** — 当前报告只确认本地工作区；尚未记录目标 commit、远端分支与 CI 结果。
-- **云服务器部署：未完成（待后续替换）** — 尚未记录服务器构建产物、发布目录、进程/静态服务状态与回滚点。
-- **线上 QA：未完成（待后续替换）** — 尚未在公网环境核对路由懒加载、607 条按需请求、权限冻结、阅读/批注、移动端与缓存行为。
+- **GitHub 推送：已完成** — commit SHA: `5d51389bf915536f81140d052d16e1bdcaebf3ab`；GitHub Actions: https://github.com/liqinglan0512/MathLearn/actions/runs/33069675700；CI: PASS。
+- **云服务器部署：已完成** — 部署时间: `2026-08-27 05:19:01-07:00`；线上 URL: http://8.130.33.10:8090/；发布目录: `/opt/mathlearn/dist`；回滚点: `C:\Users\lijiahao\Documents\Codex\2026-08-25\new-chat-2\work\release-backups\20260827T115934Z-pre-mathforge-0.2`（76 文件，manifest SHA-256 `e7ea113f5891e4e25ab17fec67ed69929dc07edee7cf51ab97494676f1b8e24a`）；健康检查: PASS（HTTP 200；718/718 公网文件与 26/26 路由一致）。
+- **线上 QA：已完成** — QA 时间: `2026-08-27 05:24:12-07:00`；测试 URL: http://8.130.33.10:8090/；QA 清单: PASS（I.47 中文/英文与历史译文顺序、I.48 可视化降级、`\varepsilon>0` KaTeX 渲染、Euclid catalog→卷索引按需加载、四个投稿/上传入口冻结）。
 <!-- RELEASE_STATUS_END -->
 
-替换这些状态时必须附可复验依据，例如 commit SHA、CI URL、部署时间、线上 URL、健康检查和 QA 清单；不能只把“未完成”改成“已完成”。
-
-发布完成后的三行必须使用下列完整字段（替换尖括号内容，不保留示例值）：
-
-```text
-- **GitHub 推送：已完成** — commit SHA: <7至40位哈希>；GitHub Actions: https://github.com/<owner>/<repo>/actions/runs/<run-id>；CI: PASS。
-- **云服务器部署：已完成** — 部署时间: <YYYY-MM-DD HH:MM:SS+时区>；线上 URL: <http(s) URL>；发布目录: <路径或 artifact>；回滚点: <可恢复版本>；健康检查: PASS (<HTTP 状态>)。
-- **线上 QA：已完成** — QA 时间: <YYYY-MM-DD HH:MM:SS+时区>；测试 URL: <http(s) URL>；QA 清单: PASS（<已验证项目>）。
-```
+以上三行只记录已经实际完成并可复验的发布动作；管理员编辑器 E2E、移动端、弱网、缓存头与 HTTPS 仍保留在未完成/风险边界中。
 
 ## 10. 本地复验入口
 
