@@ -1,8 +1,16 @@
 import { useId, useState, type PointerEvent } from 'react'
 import { Compass, RotateCcw } from 'lucide-react'
-import { getEuclidProposition } from '@/lib/euclid'
+import type { VisualizationTrustLevel } from '@/lib/content-model'
+import type { EuclidVisualizationAttestation } from '@/lib/euclid-repository'
+import {
+  getEuclidRendererDescriptor,
+  isCurrentEuclidRendererRevision,
+  type EuclidRendererGeometry,
+} from '@/lib/euclid-renderer-manifest'
 
-type GeometryKind = 'triangle' | 'parallel' | 'circle' | 'polygon' | 'area' | 'ratio' | 'number' | 'irrational' | 'solid'
+export type EuclidDiagramGeometry = EuclidRendererGeometry
+type GeometryKind = EuclidDiagramGeometry
+export type EuclidTriangleVariant = 'equilateral-construction' | 'pythagorean-squares' | 'generic'
 type Point = { x: number; y: number }
 type Point3 = readonly [number, number, number]
 
@@ -16,9 +24,20 @@ interface DiagramPalette {
 }
 
 interface DiagramProps {
-  articleId: string
   title: string
+  englishTitle?: string
+  book: number
+  proposition: number
+  rendererId: string | null
+  trustLevel: VisualizationTrustLevel
+  attestation?: EuclidVisualizationAttestation | null
   paperMode?: boolean
+}
+
+export interface EuclidVisualizationPresentation {
+  effectiveTrustLevel: Exclude<VisualizationTrustLevel, 'none'>
+  label: string
+  note: string
 }
 
 const GOLDEN_RATIO = (1 + Math.sqrt(5)) / 2
@@ -79,13 +98,20 @@ function Guide({ x1, y1, x2, y2, palette }: {
   return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={palette.construction} strokeDasharray="5 6" strokeWidth="1" />
 }
 
-function TriangleDiagram({ value, book, proposition, palette }: {
+// eslint-disable-next-line react-refresh/only-export-components -- Pure renderer branch contract is exercised without a browser.
+export function resolveEuclidTriangleVariant(rendererId: string): EuclidTriangleVariant {
+  if (rendererId === 'euclid-1-1') return 'equilateral-construction'
+  if (rendererId === 'euclid-1-47') return 'pythagorean-squares'
+  return 'generic'
+}
+
+function TriangleDiagram({ value, rendererId, palette }: {
   value: number
-  book: number
-  proposition: number
+  rendererId: string
   palette: DiagramPalette
 }) {
-  if (book === 1 && proposition === 1) {
+  const variant = resolveEuclidTriangleVariant(rendererId)
+  if (variant === 'equilateral-construction') {
     const radius = 105 + value * 120
     const first = { x: 280 - radius / 2, y: 250 }
     const second = { x: 280 + radius / 2, y: 250 }
@@ -104,7 +130,7 @@ function TriangleDiagram({ value, book, proposition, palette }: {
     )
   }
 
-  if (book === 1 && (proposition === 47 || proposition === 48)) {
+  if (variant === 'pythagorean-squares') {
     const horizontal = 130 + value * 80
     const vertical = 85 + value * 35
     const a = { x: 176, y: 194 }
@@ -432,20 +458,87 @@ function SolidDiagram({ value, title, englishTitle, palette }: {
   )
 }
 
-export function EuclidDiagram({ articleId, title, paperMode = false }: DiagramProps) {
-  const entry = getEuclidProposition(articleId)
+// eslint-disable-next-line react-refresh/only-export-components -- Pure renderer contract is exercised without a browser.
+export function resolveEuclidRendererGeometry(rendererId: string): GeometryKind | null {
+  return getEuclidRendererDescriptor(rendererId)?.geometry ?? null
+}
+
+// eslint-disable-next-line react-refresh/only-export-components -- Trust validation must be testable independently of React rendering.
+export function hasCompleteVisualizationAttestation(
+  rendererId: string | null | undefined,
+  attestation: EuclidVisualizationAttestation | null | undefined,
+): attestation is EuclidVisualizationAttestation {
+  const renderer = getEuclidRendererDescriptor(rendererId)
+  return Boolean(renderer?.scope === 'proposition_specific'
+    && attestation
+    && attestation.reviewId.trim()
+    && attestation.reviewerId.trim()
+    && Number.isInteger(attestation.reviewedAt)
+    && attestation.reviewedAt >= 0
+    && attestation.rendererRevision.trim()
+    && isCurrentEuclidRendererRevision(rendererId, attestation.rendererRevision)
+    && /^[a-f0-9]{64}$/.test(attestation.contentHash))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components -- Presentation downgrade is a pure trust contract.
+export function resolveEuclidVisualizationPresentation(
+  trustLevel: Exclude<VisualizationTrustLevel, 'none'>,
+  rendererId: string | null | undefined,
+  attestation?: EuclidVisualizationAttestation | null,
+): EuclidVisualizationPresentation {
+  if (trustLevel === 'verified' && hasCompleteVisualizationAttestation(rendererId, attestation)) {
+    return {
+      effectiveTrustLevel: 'verified',
+      label: '已核验命题交互构造',
+      note: `图形已由 ${attestation.reviewerId} 针对 renderer ${attestation.rendererRevision} 完成人工核验`,
+    }
+  }
+  if (trustLevel === 'verified') {
+    return {
+      effectiveTrustLevel: 'proposition_specific',
+      label: '命题交互图',
+      note: '缺少完整人工核验凭据，已安全降级为尚未核验的命题图',
+    }
+  }
+  if (trustLevel === 'proposition_specific') {
+    return {
+      effectiveTrustLevel: 'proposition_specific',
+      label: '命题交互图',
+      note: '按本命题单独实现，尚未完成人工图形核验',
+    }
+  }
+  return {
+    effectiveTrustLevel: 'concept_illustration',
+    label: '相关概念示意',
+    note: '用于观察相关结构，不等同于本命题的精确构造',
+  }
+}
+
+export function EuclidDiagram({
+  title,
+  englishTitle = '',
+  book,
+  proposition,
+  rendererId,
+  trustLevel,
+  attestation,
+  paperMode = false,
+}: DiagramProps) {
   const [value, setValue] = useState(0.5)
   const [dragging, setDragging] = useState(false)
   const accessibleId = useId()
 
-  if (!entry) return null
+  if (trustLevel === 'none' || !rendererId) return null
 
   const palette: DiagramPalette = paperMode
     ? { primary: '#877044', accent: '#a65e43', quiet: '#767563', construction: '#beb4a0', label: '#454338', fill: 'rgb(166 139 84 / 0.09)' }
     : { primary: '#d7bc80', accent: '#d68f73', quiet: '#a5a18e', construction: '#726d5d', label: '#ded9cc', fill: 'rgb(199 173 112 / 0.095)' }
-  const geometry = entry.geometry as GeometryKind
-  const englishTitle = 'englishTitle' in entry && typeof entry.englishTitle === 'string' ? entry.englishTitle : ''
+  const geometry = resolveEuclidRendererGeometry(rendererId)
+  if (!geometry) return null
   const tangency = /切线|tangent/i.test(`${title} ${englishTitle}`)
+  const presentation = resolveEuclidVisualizationPresentation(trustLevel, rendererId, attestation)
+  const trustLabel = presentation.label
+  const trustNote = presentation.note
 
   function moveFromPointer(event: PointerEvent<SVGSVGElement>) {
     const bounds = event.currentTarget.getBoundingClientRect()
@@ -456,13 +549,16 @@ export function EuclidDiagram({ articleId, title, paperMode = false }: DiagramPr
   return (
     <section
       className={`mt-12 overflow-hidden rounded-[5px] border ${paperMode ? 'border-[#93876b]/25 bg-[#ede7d9]' : 'border-white/[0.08] bg-[#151613]'}`}
-      aria-label="命题交互可视化"
+      aria-label={trustLabel}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 pb-1 pt-4 sm:px-5">
-        <p className="inline-flex items-center gap-2 text-[12px] font-medium tracking-wide opacity-80">
-          <Compass className="h-4 w-4 text-[#b79d68]" /> {FAMILY_LABELS[geometry] ?? '欧几里得几何构造'}
-        </p>
-        <span className="text-[11px] opacity-60">拖动图形，观察条件保持不变</span>
+        <div>
+          <p className="inline-flex items-center gap-2 text-[12px] font-medium tracking-wide opacity-80">
+            <Compass className="h-4 w-4 text-[#b79d68]" /> {trustLabel} · {FAMILY_LABELS[geometry] ?? '欧几里得几何构造'}
+          </p>
+          <p className="mt-1 text-[10px] leading-5 opacity-55">{trustNote}</p>
+        </div>
+        <span className="text-[11px] opacity-60">拖动图形，观察结构变化</span>
       </div>
 
       <svg
@@ -482,13 +578,13 @@ export function EuclidDiagram({ articleId, title, paperMode = false }: DiagramPr
         onPointerCancel={() => setDragging(false)}
       >
         <title id={accessibleId}>{`${title}：${FAMILY_LABELS[geometry] ?? '交互式几何图形'}`}</title>
-        {geometry === 'triangle' && <TriangleDiagram value={value} book={entry.book} proposition={entry.proposition} palette={palette} />}
+        {geometry === 'triangle' && <TriangleDiagram value={value} rendererId={rendererId} palette={palette} />}
         {geometry === 'parallel' && <ParallelDiagram value={value} palette={palette} />}
         {geometry === 'circle' && <CircleDiagram value={value} palette={palette} tangent={tangency} />}
-        {geometry === 'polygon' && <PolygonDiagram value={value} proposition={entry.proposition} palette={palette} />}
+        {geometry === 'polygon' && <PolygonDiagram value={value} proposition={proposition} palette={palette} />}
         {geometry === 'area' && <AreaDiagram value={value} palette={palette} />}
         {geometry === 'ratio' && <RatioDiagram value={value} palette={palette} />}
-        {geometry === 'number' && <NumberDiagram value={value} book={entry.book} proposition={entry.proposition} palette={palette} />}
+        {geometry === 'number' && <NumberDiagram value={value} book={book} proposition={proposition} palette={palette} />}
         {geometry === 'irrational' && <IrrationalDiagram value={value} palette={palette} />}
         {geometry === 'solid' && <SolidDiagram value={value} title={title} englishTitle={englishTitle} palette={palette} />}
       </svg>
@@ -509,7 +605,7 @@ export function EuclidDiagram({ articleId, title, paperMode = false }: DiagramPr
           onClick={() => setValue(0.5)}
           className="inline-flex items-center gap-1 text-[11px] opacity-65 transition-opacity hover:opacity-100"
         >
-          <RotateCcw className="h-3.5 w-3.5" /> 恢复构造
+          <RotateCcw className="h-3.5 w-3.5" /> {presentation.effectiveTrustLevel === 'concept_illustration' ? '重置示意' : '恢复构造'}
         </button>
       </div>
     </section>

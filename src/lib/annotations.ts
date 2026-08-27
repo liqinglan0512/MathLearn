@@ -26,6 +26,11 @@ export interface PassageAnnotation extends PassageAnchor {
   comments: PassageComment[]
 }
 
+export interface ResolvedPassageAnchor {
+  start: number
+  end: number
+}
+
 interface AnnotationAuthor {
   id: string
   name: string
@@ -43,6 +48,35 @@ export function getPassageBlockVersion(content: string): string {
     hash = Math.imul(hash, 0x01000193)
   }
   return `fnv1a-${(hash >>> 0).toString(16).padStart(8, '0')}-${content.length}`
+}
+
+/**
+ * Re-anchor an immutable quote after surrounding prose changes.
+ * Exact offsets win; otherwise a matching prefix or suffix is required so a
+ * repeated phrase is not attached to an unrelated occurrence.
+ */
+export function resolvePassageAnchor(
+  anchor: Pick<PassageAnchor, 'start' | 'end' | 'quote' | 'prefix' | 'suffix'>,
+  text: string,
+): ResolvedPassageAnchor | null {
+  if (text.slice(anchor.start, anchor.end) === anchor.quote) {
+    return { start: anchor.start, end: anchor.end }
+  }
+
+  let cursor = 0
+  let best: (ResolvedPassageAnchor & { score: number }) | null = null
+  while (cursor < text.length) {
+    const start = text.indexOf(anchor.quote, cursor)
+    if (start < 0) break
+    const end = start + anchor.quote.length
+    const prefix = text.slice(Math.max(0, start - anchor.prefix.length), start)
+    const suffix = text.slice(end, end + anchor.suffix.length)
+    const score = Number(prefix === anchor.prefix) + Number(suffix === anchor.suffix)
+    if (!best || score > best.score) best = { start, end, score }
+    cursor = start + Math.max(anchor.quote.length, 1)
+  }
+
+  return best && best.score > 0 ? { start: best.start, end: best.end } : null
 }
 
 function readAnnotations(): PassageAnnotation[] {

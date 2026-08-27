@@ -46,6 +46,8 @@ const REQUIRED_SCRIPTS = [
   'typecheck',
   'test',
   'check:latex',
+  'check:hygiene',
+  'check:contracts',
   'check',
 ]
 
@@ -65,12 +67,23 @@ export function findForbiddenTrackedFiles(files) {
     .filter(({ reason }) => reason !== null)
 }
 
-function readTrackedFiles(repositoryRoot) {
-  const output = execFileSync('git', ['ls-files', '-z'], {
+function readGitFiles(repositoryRoot, args) {
+  const output = execFileSync('git', ['ls-files', '-z', ...args], {
     cwd: repositoryRoot,
     encoding: 'utf8',
   })
   return output.split('\0').filter(Boolean)
+}
+
+function readTrackedFiles(repositoryRoot) {
+  return readGitFiles(repositoryRoot, ['--cached'])
+}
+
+// Include every untracked path Git would consider for a commit while excluding
+// files covered by the repository's normal ignore rules. This makes the audit
+// meaningful before staging a release candidate, not only after `git add`.
+function readUntrackedCandidateFiles(repositoryRoot) {
+  return readGitFiles(repositoryRoot, ['--others', '--exclude-standard'])
 }
 
 function isIgnored(repositoryRoot, filePath) {
@@ -89,9 +102,11 @@ export function auditRepository(repositoryRoot = DEFAULT_REPOSITORY_ROOT) {
   const root = resolve(repositoryRoot)
   const violations = []
   const trackedFiles = readTrackedFiles(root)
+  const untrackedCandidateFiles = readUntrackedCandidateFiles(root)
+  const candidateFiles = [...new Set([...trackedFiles, ...untrackedCandidateFiles])]
 
-  for (const { file, reason } of findForbiddenTrackedFiles(trackedFiles)) {
-    violations.push(`${file}: tracked ${reason}`)
+  for (const { file, reason } of findForbiddenTrackedFiles(candidateFiles)) {
+    violations.push(`${file}: release candidate contains ${reason}`)
   }
 
   for (const file of REQUIRED_IGNORE_PROBES) {
@@ -118,6 +133,8 @@ export function auditRepository(repositoryRoot = DEFAULT_REPOSITORY_ROOT) {
 
   return {
     trackedFileCount: trackedFiles.length,
+    untrackedCandidateFileCount: untrackedCandidateFiles.length,
+    candidateFileCount: candidateFiles.length,
     ignoreProbeCount: REQUIRED_IGNORE_PROBES.length,
     violations,
   }
@@ -133,7 +150,7 @@ function runCli() {
   }
 
   console.log(
-    `Repository hygiene PASS (${result.trackedFileCount} tracked files; ${result.ignoreProbeCount} ignore probes)`,
+    `Repository hygiene PASS (${result.candidateFileCount} candidate files: ${result.trackedFileCount} tracked + ${result.untrackedCandidateFileCount} untracked; ${result.ignoreProbeCount} ignore probes)`,
   )
 }
 

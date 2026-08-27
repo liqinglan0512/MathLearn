@@ -44,5 +44,8 @@ jobs:
       - name: Validate repository hygiene
         run: npm run check:hygiene
 
+      - name: Validate MathForge contracts and lazy Euclid data
+        run: npm run check:contracts
+
       - name: Build
         run: npm run build

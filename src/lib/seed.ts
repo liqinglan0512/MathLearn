@@ -1,5 +1,4 @@
 import type { Article, Comment, Paper, Problem, Solution } from './types'
-import { getEuclidArticles } from './euclid'
 
 export const seedProblems: Problem[] = [
   {
@@ -1190,7 +1189,6 @@ export const seedArticles: Article[] = [
   ...seedArticlesMore,
   ...seedArticlesNumGeo,
   ...seedArticlesLearningLoop,
-  ...getEuclidArticles(),
 ]
 
 export const seedPapers: Paper[] = [

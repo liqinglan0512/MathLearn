@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context'
 import {
   createPassageAnnotation,
   getPassageAnnotations,
+  resolvePassageAnchor,
   replyToPassageAnnotation,
   type PassageAnchor,
   type PassageAnnotation,
@@ -115,27 +116,6 @@ function clearAnnotationMarks(container: HTMLElement) {
   }
 }
 
-function resolveAnchor(annotation: PassageAnnotation, text: string): { start: number; end: number } | null {
-  if (text.slice(annotation.start, annotation.end) === annotation.quote) {
-    return { start: annotation.start, end: annotation.end }
-  }
-
-  let cursor = 0
-  let best: { start: number; end: number; score: number } | null = null
-  while (cursor < text.length) {
-    const start = text.indexOf(annotation.quote, cursor)
-    if (start < 0) break
-    const end = start + annotation.quote.length
-    const prefix = text.slice(Math.max(0, start - annotation.prefix.length), start)
-    const suffix = text.slice(end, end + annotation.suffix.length)
-    const score = Number(prefix === annotation.prefix) + Number(suffix === annotation.suffix)
-    if (!best || score > best.score) best = { start, end, score }
-    cursor = start + Math.max(annotation.quote.length, 1)
-  }
-
-  return best && best.score > 0 ? { start: best.start, end: best.end } : null
-}
-
 function applyAnnotationMarks(container: HTMLElement, annotations: PassageAnnotation[], paperMode: boolean) {
   clearAnnotationMarks(container)
   if (annotations.length === 0) return
@@ -145,7 +125,7 @@ function applyAnnotationMarks(container: HTMLElement, annotations: PassageAnnota
     const { segments, text } = collectTextSegments(block)
     const anchors = annotations
       .filter((annotation) => annotation.blockId === block.dataset.blockId)
-      .map((annotation) => ({ annotation, anchor: resolveAnchor(annotation, text) }))
+      .map((annotation) => ({ annotation, anchor: resolvePassageAnchor(annotation, text) }))
       .filter((item): item is { annotation: PassageAnnotation; anchor: { start: number; end: number } } => Boolean(item.anchor))
       .sort((left, right) => right.anchor.start - left.anchor.start)
 

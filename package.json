@@ -14,7 +14,8 @@
     "test": "vitest run",
     "check:latex": "node check-latex.mjs",
     "check:hygiene": "node scripts/verify-repository-hygiene.mjs",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run check:latex && npm run check:hygiene && npm run build",
+    "check:contracts": "node scripts/verify-baseline-doc.mjs && node scripts/verify-feature-freeze.mjs && node scripts/verify-euclid-lazy-data.mjs && node scripts/verify-completion-docs.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run check:latex && npm run check:hygiene && npm run check:contracts && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -77,6 +78,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
+    "esbuild": "^0.27.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

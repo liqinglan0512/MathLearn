@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "renderers": [
+    {
+      "id": "concept-area",
+      "geometry": "area",
+      "scope": "concept_illustration",
+      "revision": "concept-area@renderer-v1"
+    },
+    {
+      "id": "concept-circle",
+      "geometry": "circle",
+      "scope": "concept_illustration",
+      "revision": "concept-circle@renderer-v1"
+    },
+    {
+      "id": "concept-irrational",
+      "geometry": "irrational",
+      "scope": "concept_illustration",
+      "revision": "concept-irrational@renderer-v1"
+    },
+    {
+      "id": "concept-number",
+      "geometry": "number",
+      "scope": "concept_illustration",
+      "revision": "concept-number@renderer-v1"
+    },
+    {
+      "id": "concept-parallel",
+      "geometry": "parallel",
+      "scope": "concept_illustration",
+      "revision": "concept-parallel@renderer-v1"
+    },
+    {
+      "id": "concept-polygon",
+      "geometry": "polygon",
+      "scope": "concept_illustration",
+      "revision": "concept-polygon@renderer-v1"
+    },
+    {
+      "id": "concept-ratio",
+      "geometry": "ratio",
+      "scope": "concept_illustration",
+      "revision": "concept-ratio@renderer-v1"
+    },
+    {
+      "id": "concept-solid",
+      "geometry": "solid",
+      "scope": "concept_illustration",
+      "revision": "concept-solid@renderer-v1"
+    },
+    {
+      "id": "concept-triangle",
+      "geometry": "triangle",
+      "scope": "concept_illustration",
+      "revision": "concept-triangle@renderer-v1"
+    },
+    {
+      "id": "euclid-1-1",
+      "geometry": "triangle",
+      "scope": "proposition_specific",
+      "revision": "euclid-1-1@renderer-v1"
+    },
+    {
+      "id": "euclid-1-47",
+      "geometry": "triangle",
+      "scope": "proposition_specific",
+      "revision": "euclid-1-47@renderer-v1"
+    },
+    {
+      "id": "euclid-9-20",
+      "geometry": "number",
+      "scope": "proposition_specific",
+      "revision": "euclid-9-20@renderer-v1"
+    }
+  ]
+}

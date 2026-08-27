@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown'
+import { createElement } from 'react'
 import { Link } from 'react-router'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
@@ -23,28 +24,34 @@ function normalizeMathDelimiters(content: string): string {
 }
 
 export function Markdown({ content, className }: { content: string; className?: string }) {
+  // The local visual-inspection plugin annotates JSX components with a
+  // `code-path` prop in development. ReactMarkdown forwards unknown props to
+  // its Fragment root, and React rejects props other than key/children there.
+  // createElement keeps that development-only metadata off ReactMarkdown while
+  // preserving the exact rendered tree in production.
+  const renderedMarkdown = createElement(ReactMarkdown, {
+    remarkPlugins: [remarkMath],
+    rehypePlugins: [rehypeKatex],
+    components: {
+      a({ href, children }) {
+        if (href?.startsWith('/') && !href.startsWith('//')) {
+          return <Link to={href}>{children}</Link>
+        }
+
+        const external = href?.startsWith('https://') || href?.startsWith('http://')
+        return (
+          <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer noopener' : undefined}>
+            {children}
+          </a>
+        )
+      },
+    },
+    children: normalizeMathDelimiters(content),
+  })
+
   return (
     <div className={`md ${className ?? ''}`}>
-      <ReactMarkdown
-        remarkPlugins={[remarkMath]}
-        rehypePlugins={[rehypeKatex]}
-        components={{
-          a({ href, children }) {
-            if (href?.startsWith('/') && !href.startsWith('//')) {
-              return <Link to={href}>{children}</Link>
-            }
-
-            const external = href?.startsWith('https://') || href?.startsWith('http://')
-            return (
-              <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer noopener' : undefined}>
-                {children}
-              </a>
-            )
-          },
-        }}
-      >
-        {normalizeMathDelimiters(content)}
-      </ReactMarkdown>
+      {renderedMarkdown}
     </div>
   )
 }

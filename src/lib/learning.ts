@@ -1,5 +1,4 @@
 import { store, uid } from './store'
-import { getEuclidProposition } from './euclid'
 import type { Article, Problem, Solution } from './types'
 import type { User } from './types'
 import { assertCanModerateReview } from './permissions'
@@ -581,54 +580,6 @@ export function getProblemLearningProfile(problem: Problem): ProblemLearningProf
 export function getArticleLearningProfile(article: Article): ArticleLearningProfile {
   const known = ARTICLE_PROFILES[article.id]
   if (known) return known
-
-  const euclid = getEuclidProposition(article.id)
-  if (euclid) {
-    const isProposition = euclid.kind === 'proposition'
-    const foundations = euclid.dependencies.length > 0
-      ? `只使用原文实际引用的 ${euclid.dependencies.length} 条前置定义、公设、公理或命题，并逐段核对引用是否足以支持当前结论。`
-      : isProposition
-        ? '逐段辨认构造、已知条件与结论；原文没有明确列出的前提不能被假定已经完成证明。'
-        : '分清定义、明确采用的公设与需要另行证明的命题，不把演绎起点伪装成定理。'
-
-    const conditionChecks = euclid.sourceMissing
-      ? ['官方底本只保留了空记录；没有可靠正文时，不补写或假装恢复原始定义。']
-      : [
-          isProposition
-            ? '区分作图中给定的条件、已经引用的结论，以及图形看起来成立但仍需要说明的性质。'
-            : '先核对这条内容在体系中属于定义、公设还是公理，再判断它能被如何引用。',
-          '历史原文的论证与现代公理体系并不完全一致；出现隐含前提时，需要明确指出。',
-        ]
-
-    if (euclid.id === 'euclid-1-1') {
-      conditionChecks.push('两圆交点的存在并未由欧几里得列出的基础公设单独保证；现代严密证明需要补充连续性或交点公理。')
-    }
-    if (euclid.id === 'euclid-1-47') {
-      conditionChecks.push('勾股结论以直角三角形为前提；用相似三角形或坐标法给出替代证明时，也必须分别交代所依赖的现代结果。')
-    }
-
-    return {
-      articleId: article.id,
-      knowledgeIds: [],
-      problemIds: [],
-      labIds: [],
-      framingQuestion: euclid.sourceMissing
-        ? '权威底本为何保留了这一条编号，却没有留下可以核对的定义正文？'
-        : isProposition
-          ? `不把“${euclid.title}”当作已知结论，只从定义、作图公设与此前已经建立的结果出发，怎样一步一步得到它？`
-          : `为什么“${euclid.title}”需要被明确写入演绎体系，它又为后续哪些命题提供基础？`,
-      abstraction: {
-        intuition: euclid.sourceMissing
-          ? '首先辨认来源缺口，不把版本中的空记录当作已经复原的数学内容。'
-          : `先拖动对应图形，辨认“${euclid.title}”描述的对象、保持不变的关系与真正需要解释的问题。`,
-        rigorous: foundations,
-        extension: isProposition
-          ? '沿着双向证明依赖图回溯前置结论，再检查后来哪些命题继续建立在这一结论之上。'
-          : '追踪这条演绎起点在后续证明中的实际使用，并比较古典几何与现代公理化表述。',
-      },
-      conditionChecks,
-    }
-  }
 
   const relatedProblems = store.problems().filter((problem) => problem.chapter === article.topic)
   const knowledgeIds = [...new Set(relatedProblems.flatMap((problem) => getProblemLearningProfile(problem).prerequisiteIds))].slice(0, 4)

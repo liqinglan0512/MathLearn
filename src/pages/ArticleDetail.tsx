@@ -13,19 +13,14 @@ import {
   Sun,
 } from 'lucide-react'
 import { getArticleLearningProfile, getKnowledgeNodes, getLabMeta } from '@/lib/learning'
-import { getEuclidEntry } from '@/lib/euclid'
 import { store } from '@/lib/store'
-import { EuclidDiagram } from '@/components/geometry/EuclidDiagram'
-import {
-  EuclidDependencyGraph,
-  SemanticProofBlocks,
-} from '@/components/reading/EuclidProofStructure'
+import { getPassageBlockVersion } from '@/lib/annotations'
+import { Markdown } from '@/components/Markdown'
 import { MathProse } from '@/components/reading/MathProse'
 import { PassageAnnotations } from '@/components/reading/PassageAnnotations'
-import { describeEuclidEntry, getArticleReadingBlocks } from '@/lib/reading-blocks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CommentThread } from './ProblemDetail'
+import { CommentThread } from '@/components/CommentThread'
 
 type ReaderLevel = 'intuition' | 'rigorous' | 'extension'
 type ReaderTheme = 'dark' | 'paper'
@@ -80,24 +75,24 @@ export default function ArticleDetail() {
     )
   }
 
-  const euclidEntry = getEuclidEntry(article.id)
-  const readingBlocks = getArticleReadingBlocks(article.id, article.content)
+  const readingBlocks = [{
+    id: `${article.id}.body`,
+    kind: 'body',
+    title: '正文',
+    content: article.content,
+    version: getPassageBlockVersion(`body\n${article.content}`),
+  }]
   const profile = getArticleLearningProfile(article)
-  const knowledgeNodes = euclidEntry ? [] : getKnowledgeNodes(profile.knowledgeIds)
-  const relatedProblems = euclidEntry ? [] : store.problems().filter((problem) => profile.problemIds.includes(problem.id))
-  const relatedLabs = euclidEntry ? [] : profile.labIds.map((labId) => getLabMeta(labId))
+  const knowledgeNodes = getKnowledgeNodes(profile.knowledgeIds)
+  const relatedProblems = store.problems().filter((problem) => profile.problemIds.includes(problem.id))
+  const relatedLabs = profile.labIds.map((labId) => getLabMeta(labId))
   const comments = store.comments().filter((comment) => comment.targetId === article.id)
   const paperMode = theme === 'paper'
-  const routes = euclidEntry
-    ? readingBlocks
-      .filter((block) => ['statement', 'definition', 'postulate', 'common-notion', 'construction', 'proof', 'conclusion'].includes(block.kind))
-      .map((block) => block.title)
-      .slice(0, 5)
-    : article.content
-      .split('\n')
-      .filter((line) => /^#{1,3}\s/.test(line))
-      .map((line) => line.replace(/^#{1,3}\s+/, '').replace(/^\d+[.、]\s*/, ''))
-      .slice(0, 5)
+  const routes = article.content
+    .split('\n')
+    .filter((line) => /^#{1,3}\s/.test(line))
+    .map((line) => line.replace(/^#{1,3}\s+/, '').replace(/^\d+[.、]\s*/, ''))
+    .slice(0, 5)
 
   function toggleTheme() {
     const nextTheme: ReaderTheme = paperMode ? 'dark' : 'paper'
@@ -151,7 +146,6 @@ export default function ArticleDetail() {
             <Badge variant="outline" className="border-current/20 text-current">
               {article.topic}
             </Badge>
-            {euclidEntry && <span>{describeEuclidEntry(euclidEntry)}</span>}
             <span>约 {estimateReadingMinutes(article.content)} 分钟阅读</span>
           </div>
           <h1 className="mt-6 text-[2rem] font-semibold leading-[1.3] tracking-tight sm:text-[2.75rem]">
@@ -211,16 +205,13 @@ export default function ArticleDetail() {
           </div>
         )}
 
-        {/* EUCLID_DIAGRAM_SLOT: every Euclidean entry receives its own interactive construction. */}
-        <EuclidDiagram articleId={article.id} title={article.title} paperMode={paperMode} />
-
         <div className="math-reader-body mt-14 border-t border-current/10 pt-7 sm:mt-16 sm:pt-10">
           <PassageAnnotations key={article.id} articleId={article.id} paperMode={paperMode} blocks={readingBlocks}>
-            <SemanticProofBlocks blocks={readingBlocks} />
+            <div data-block-id={readingBlocks[0].id} data-block-version={readingBlocks[0].version} data-block-kind="body">
+              <Markdown content={article.content} />
+            </div>
           </PassageAnnotations>
         </div>
-
-        {euclidEntry && <EuclidDependencyGraph key={article.id} articleId={article.id} />}
 
         {profile.conditionChecks.length > 0 && (
           <section className="mt-14 border-l border-[#c7ad70]/55 pl-5 sm:pl-7" aria-label="条件核对">
