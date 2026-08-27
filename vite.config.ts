@@ -3,10 +3,10 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
-// https://vite.dev/config/
-export default defineConfig({
+// Source-inspection attributes are useful locally but do not belong in production output.
+export default defineConfig(({ command }) => ({
   base: '/',
-  plugins: [inspectAttr(), react()],
+  plugins: [command === 'serve' && inspectAttr(), react()],
   build: {
     rollupOptions: {
       output: {
@@ -27,4 +27,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));

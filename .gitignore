@@ -11,6 +11,18 @@ node_modules
 dist
 dist-ssr
 *.local
+__pycache__/
+*.py[cod]
+coverage/
+playwright-report/
+test-results/
+
+# Long-running agent state is local execution context, not product source.
+.harness-active
+harness-progress.txt
+harness-tasks.json
+harness-tasks.json.bak
+harness-tasks.json.tmp
 
 # Editor directories and files
 .vscode/*
