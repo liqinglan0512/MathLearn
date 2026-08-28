@@ -1,7 +1,24 @@
 import assert from 'node:assert/strict'
-import { readFile, stat } from 'node:fs/promises'
+import { access, readFile, readdir, stat } from 'node:fs/promises'
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
+const root = new URL('../', import.meta.url)
+
+async function assertMissing(path) {
+  await assert.rejects(access(new URL(path, root)), `${path} must be absent after repository cleanup`)
+}
+
+async function findFiles(directory, predicate, ignored = new Set()) {
+  const entries = await readdir(directory, { withFileTypes: true })
+  const matches = []
+  for (const entry of entries) {
+    if (ignored.has(entry.name)) continue
+    const child = new URL(`${entry.name}${entry.isDirectory() ? '/' : ''}`, directory)
+    if (entry.isDirectory()) matches.push(...await findFiles(child, predicate, ignored))
+    else if (predicate(entry.name)) matches.push(child)
+  }
+  return matches
+}
 
 const requiredDocuments = [
   'README.md',
@@ -42,6 +59,26 @@ assert.match(report, /CI 未运行 0\.3 commit/)
 assert.match(report, /未部署 0\.3/)
 assert.match(report, /没有运行 `npm audit fix`/)
 assert.match(report, /许可证.*Leo|Leo.*许可证/is)
+assert.match(report, /2d65102b408a3e9bf08f448484b47bdf79c01e08/)
+assert.match(report, /14\s*份 Markdown/)
+assert.match(report, /45\s*个未被.*UI 模板组件/)
+assert.match(report, /16\s*个测试文件、100\s*项测试全部保留/)
+
+await Promise.all([
+  assertMissing('template-info.md'),
+  assertMissing('src/App.css'),
+  assertMissing('src/hooks/use-mobile.ts'),
+  assertMissing('src/components/ui/chart.tsx'),
+])
+
+const markdownFiles = await findFiles(root, (name) => name.endsWith('.md'), new Set(['.git', 'dist', 'node_modules']))
+assert.equal(markdownFiles.length, 14, 'repository cleanup must retain exactly the 14 required Markdown documents')
+
+const uiFiles = await findFiles(new URL('src/components/ui/', root), (name) => name.endsWith('.tsx'))
+assert.equal(uiFiles.length, 8, 'only the eight referenced UI wrappers should remain')
+
+const testFiles = await findFiles(new URL('tests/', root), (name) => name.endsWith('.test.ts'))
+assert.equal(testFiles.length, 16, 'all 16 regression test files must remain')
 
 for (const route of [
   '`/`',
@@ -62,4 +99,4 @@ assert.match(contribution, /What[\s\S]*Why[\s\S]*How verified/)
 assert.match(direction, /Understand[\s\S]*Visualize[\s\S]*Practice[\s\S]*Contribute/)
 assert.match(security, /没有升级依赖/)
 
-console.log('MATHFORGE_0_3_COMPLETION_PASS documents=5 statuses=4 tests=100 formulas=569 release=local_only')
+console.log('MATHFORGE_0_3_COMPLETION_PASS documents=5 markdown=14 ui=8 tests=100 formulas=569 cleanup=verified release=local_only')
