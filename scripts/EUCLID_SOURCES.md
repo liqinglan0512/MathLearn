@@ -54,7 +54,7 @@
 
 - 全部 607 条独立页面均有现代中文导读；除 VI 卷定义 5 因底本原文缺失而明确说明无法翻译之外，其余 **606 条命题、定义、公设和公理陈述**均对应一条真实 Heath 英译。
 - **465 条命题的全部 5,495 个原始证明段落**逐段提供机器辅助现代中文；每段现代中文下方完整展示对应英文底本，不删除、折叠、替换或伪造原文。
-- 148 条通过版本逐卷核验的历史中文命题共含 **443 个古译正文段落**。每段先展示徐光启、利玛窦古文，再展示直接依据同一古文段落生成的现代白话解读；古文命题陈述另外附有逐条现代白话。
+- 148 条通过版本逐卷核验的历史中文命题共含 **443 个古译正文段落**。页面先展示直接依据同一古文段落生成的现代汉语解读，再在其下完整保留徐光启、利玛窦古文；古文命题陈述另外附有逐条现代白话。展示顺序不改变来源身份，两种文本始终分开标注。
 - 历史白话使用 Microsoft Translator 已公开支持的 [Literary Chinese / 文言文翻译](https://www.microsoft.com/en-us/translator/blog/2021/08/25/microsoft-translator-releases-literary-chinese-translation/)，从 `lzh` 直接译为 `zh-Hans`，不通过英文迂回改写。几何点名、古译引用与内部 Markdown 链接先保护再还原。
 - 英文现代翻译使用隔离运行的 [Helsinki-NLP/opus-mt-en-zh](https://huggingface.co/Helsinki-NLP/opus-mt-en-zh) 开源模型，模型采用 Apache-2.0 许可；此前缓存的少量样本来自 Microsoft Translator。对 `produce`、`meet`、`base`、`prime to one another`、`rational`、`commensurable` 等数学术语进行明确预处理和校验。
 - I.1、I.21、I.27、I.47 与 I.Def.15 等容易产生逻辑误译的关键条目另外经过逐段人工复核。尤其区分“线段长度之和”“正方形面积之和”，避免把古文反问“岂不更大于”译成相反的不等关系。
@@ -64,10 +64,13 @@
 
 ```powershell
 python scripts/build-euclid-corpus.py
+python scripts/translate-euclid-modern.py
+node scripts/build-euclid-lazy-data.mjs
+node scripts/verify-euclid-lazy-data.mjs
 ```
 
 构建脚本使用 Python 标准库自动获取权威 TEI/XML 与可核验的维基文库古译。它会检查源许可、十三卷顺序、逐卷命题与定义数量、完整证明、唯一 ID、历史中译逐卷编号，以及所有内部依赖是否真正存在。
 
-生成文件为 `src/lib/euclid-data.json`；页面使用 `src/lib/euclid.ts` 为每个真实引用生成 `/principles/euclid-…` 内部跳转，并为每篇条目附上版权许可和上游来源。
+权威派生源写入 `src/lib/euclid-data.json`，现代中文写入 `src/lib/euclid-modern-zh.json`。随后 `build-euclid-lazy-data.mjs` 生成 catalog、13 个卷索引和 607 个 entry，共 621 个 `public/content/euclid` JSON；运行时由 `euclid-repository.ts` 按需读取。MathForge 0.3 已将该语料标记为内部归档实验，默认公开学习路径不会加载它，但生成链、内部引用和未来恢复能力完整保留。
 
 现代中文另存为 `src/lib/euclid-modern-zh.json`，由 `scripts/translate-euclid-modern.py` 生成。脚本按原始段落建立 SHA-256 持久缓存，支持重试与断点恢复；历史白话和英文现代译文保持独立来源，最终构建时校验原始段落数量、逐字英文、古文原文及内部跳转链接。
