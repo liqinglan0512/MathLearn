@@ -52,60 +52,13 @@ function buildRubric(points: number): ExamRubricItem[] {
   })).filter((item) => item.points > 0)
 }
 
-function unique(items: string[]) {
-  return [...new Set(items)]
-}
-
 function learningLinks(title: string, content: string) {
-  const text = `${title} ${content}`
-  const articleIds: string[] = []
-  const problemIds: string[] = []
-  const labIds: string[] = []
-
-  if (/积分|黎曼|曲边|面积/.test(text)) {
-    articleIds.push('a6')
-    problemIds.push('p2', 'p7')
-    labIds.push('integral')
-  }
-  if (/极限|级数|Stolz|洛必达/.test(text)) {
-    articleIds.push('a3', 'a1')
-    problemIds.push('p1', 'p7')
-    labIds.push('taylor', 'derivative')
-  }
-  if (/矩阵|特征|向量|线性|对称/.test(text)) {
-    articleIds.push('a4', 'a5')
-    problemIds.push('p3')
-    labIds.push('linear')
-  }
-  if (/概率|随机|分布|正态/.test(text)) {
-    articleIds.push('a7')
-    problemIds.push('p8')
-    labIds.push('probability')
-  }
-  if (/统计|似然|估计/.test(text)) {
-    articleIds.push('a8')
-    problemIds.push('p8')
-    labIds.push('probability')
-  }
-  if (/微分方程|积分因子|初值/.test(text)) {
-    articleIds.push('a9')
-    labIds.push('ode')
-  }
-  if (/椭圆|圆锥|几何|直线|空间/.test(text)) {
-    articleIds.push('a11')
-    problemIds.push('p4')
-    labIds.push('plotter')
-  }
-  if (/素数|同余|数论/.test(text)) {
-    articleIds.push('a10')
-    problemIds.push('p6')
-  }
-
-  return {
-    articleIds: unique(articleIds).slice(0, 3),
-    problemIds: unique(problemIds).slice(0, 3),
-    labIds: unique(labIds).slice(0, 2),
-  }
+  // Keep the recovery fields, but do not infer precise learning relations from
+  // broad keywords. Curated paper-question mappings can be added later through
+  // the same canonical concept model after mathematical review.
+  void title
+  void content
+  return { articleIds: [], problemIds: [], labIds: [] }
 }
 
 export function parsePaperQuestions(paper: Paper): ExamQuestion[] {

@@ -16,11 +16,15 @@ const adminUser = { id: 'admin-1', isAdmin: true }
 
 function flags(overrides: Partial<FeatureFlags> = {}): FeatureFlags {
   return {
+    euclidPublic: false,
     publicContribution: false,
     attachmentUpload: false,
     challenge: false,
     learningJournal: false,
     aiAssistant: false,
+    social: false,
+    localIdentityPrototype: false,
+    localDiscussionPrototype: false,
     adminContentManagement: false,
     ...overrides,
   }

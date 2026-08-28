@@ -22,6 +22,7 @@ const NewArticle = lazy(() => import('@/pages/NewArticle'))
 const Viz = lazy(() => import('@/pages/Viz'))
 const Tools = lazy(() => import('@/pages/Tools'))
 const EuclidEditor = lazy(() => import('@/pages/admin/EuclidEditor'))
+const EuclidArchive = lazy(() => import('@/pages/admin/EuclidArchive'))
 
 function RouteLoading() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="/principles" element={<Principles />} />
             <Route path="/principles/new" element={<FeatureRoute enabled={FEATURES.publicContribution}><NewArticle /></FeatureRoute>} />
             <Route path="/principles/:id" element={<PrincipleDetailRoute />} />
+            <Route path="/internal/euclid" element={<AdminRoute><EuclidArchive /></AdminRoute>} />
             <Route path="/internal/euclid/:id/edit" element={<AdminRoute><EuclidEditor /></AdminRoute>} />
             <Route path="/viz" element={<Viz />} />
             <Route path="/tools" element={<Tools />} />

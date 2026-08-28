@@ -1,47 +1,67 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { ArrowRight, BookOpen, Compass, FileStack, FunctionSquare } from 'lucide-react'
+import { ArrowRight, BookOpen, Compass, FunctionSquare, Github } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import MathManifold from '@/components/MathManifold'
+import { GITHUB_REPOSITORY_URL, OPEN_LEARNING_LOOP } from '@/config/product'
 
 const CAPABILITIES = [
-  { title: '严谨推导', desc: '定义、定理与证明', to: '/principles' },
-  { title: '多解比较', desc: '同题不同思想', to: '/problems' },
-  { title: '动态实验', desc: '让抽象结构可以被操纵', to: '/viz' },
-  { title: '系统训练', desc: '题目、试卷与知识链', to: '/papers' },
+  { title: '理解', desc: '直觉、定义与严格推理', to: '/principles', external: false },
+  { title: '可视化', desc: '亲手改变参数，看见结构', to: '/viz', external: false },
+  { title: '练习', desc: '用少量好题检验理解', to: '/problems', external: false },
+  { title: '开源', desc: '通过 GitHub 一起改进', to: GITHUB_REPOSITORY_URL, external: true },
 ]
-
-const LEARNING_PATH = ['遇见问题', '找到知识缺口', '回到第一性原理', '动态观察', '重新解题', '变式检验']
 
 const COLLECTIONS = [
   {
     icon: BookOpen,
-    title: '从一道好题开始',
-    desc: '题目不止通向答案，也通向它所依赖的定义、思想与证明。',
-    label: '探索题库',
-    to: '/problems',
+    title: '理解一个数学概念',
+    desc: '从问题的起点出发，让直觉、定义、条件与证明一步步长出来。',
+    label: '开始学习',
+    to: '/principles',
+    external: false,
   },
   {
     icon: Compass,
-    title: '追问为什么成立',
-    desc: '找到问题的起点，看见被省略的条件，沿着推导回到结论。',
-    label: '阅读第一性原理',
-    to: '/principles',
+    title: '亲手看见它',
+    desc: '改变参数、拖动对象，观察抽象关系在图形和运动中保持什么。',
+    label: '探索可视化',
+    to: '/viz',
+    external: false,
   },
   {
     icon: FunctionSquare,
-    title: '把抽象放进实验',
-    desc: '拖动参数、观察变化，让极限、线性变换和收敛过程变得可见。',
-    label: '进入概念实验室',
-    to: '/viz',
+    title: '用练习检验理解',
+    desc: '题目不是终点；它用来暴露知识缺口，并把你带回相应概念。',
+    label: '进入练习',
+    to: '/problems',
+    external: false,
   },
   {
-    icon: FileStack,
-    title: '让理解经得起检验',
-    desc: '通过试卷、变式和完整解答，确认掌握的究竟是答案还是方法。',
-    label: '开始系统训练',
-    to: '/papers',
+    icon: Github,
+    title: '一起把解释变得更好',
+    desc: '报告数学错误、提出解释改进，或通过 Pull Request 贡献代码与内容。',
+    label: '在 GitHub 上贡献',
+    to: GITHUB_REPOSITORY_URL,
+    external: true,
   },
 ]
+
+function Destination({
+  to,
+  external,
+  className,
+  children,
+}: {
+  to: string
+  external: boolean
+  className: string
+  children: ReactNode
+}) {
+  return external
+    ? <a href={to} target="_blank" rel="noreferrer" className={className}>{children}</a>
+    : <Link to={to} className={className}>{children}</Link>
+}
 
 export default function Home() {
   return (
@@ -58,15 +78,15 @@ export default function Home() {
               数学，从这里开始
             </h1>
             <p className="mt-7 max-w-[30rem] text-[15px] leading-[2.05] text-[#b6b3a9] sm:text-[16px]">
-              从一道题，到一条完整的推导。
+              从直觉出发，走向严格。
               <br />
-              让公式回到直觉，让理解先于记忆。
+              让公式回到它产生的地方。
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-3 sm:mt-11 sm:gap-4">
               <Button asChild size="lg" className="home-primary-cta h-12 rounded-[5px] px-6 text-[14px] font-medium">
-                <Link to="/problems">
-                  开始探索 <ArrowRight className="home-cta-arrow ml-1.5 h-[16px] w-[16px]" />
+                <Link to="/principles">
+                  开始学习 <ArrowRight className="home-cta-arrow ml-1.5 h-[16px] w-[16px]" />
                 </Link>
               </Button>
               <Button
@@ -75,19 +95,24 @@ export default function Home() {
                 size="lg"
                 className="home-secondary-cta h-12 rounded-[5px] px-5 text-[14px] font-normal"
               >
-                <Link to="/principles">阅读第一篇推导</Link>
+                <a href={GITHUB_REPOSITORY_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2">
+                  <Github className="h-4 w-4" />查看 GitHub
+                </a>
               </Button>
+              <Link to="/viz" className="inline-flex h-12 items-center gap-1.5 px-2 text-[13px] text-[#a9a397] hover:text-[#e8dfca]">
+                探索可视化<ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
           </div>
 
           <nav className="home-capabilities grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-4 sm:gap-x-8" aria-label="MathForge 学习入口">
             {CAPABILITIES.map((item) => (
-              <Link key={item.title} to={item.to} className="home-capability group block min-w-0">
+              <Destination key={item.title} to={item.to} external={item.external} className="home-capability group block min-w-0">
                 <p className="text-[14px] font-medium tracking-[0.045em] text-[#e4dfd1] transition-colors group-hover:text-[#f0e8d3]">
                   {item.title}
                 </p>
                 <p className="mt-2 text-[12px] leading-5 text-[#898a83]">{item.desc}</p>
-              </Link>
+              </Destination>
             ))}
           </nav>
         </div>
@@ -101,25 +126,25 @@ export default function Home() {
               理解，从来不是一条捷径。
             </h2>
           </div>
-          <p className="max-w-[21rem] text-[14px] leading-7 text-[#898a83]">
-            从第一次困惑，到终于说清楚为什么。
-          </p>
+          <p className="max-w-[21rem] text-[14px] leading-7 text-[#898a83]">从第一次困惑，到能够解释、观察并检验它。</p>
         </div>
 
-        <ol className="home-learning-path mt-11 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-14 sm:grid-cols-3 lg:grid-cols-6">
-          {LEARNING_PATH.map((step, index) => (
-            <li key={step} className="home-path-step relative min-w-0">
+        <ol className="home-learning-path mt-11 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-14 lg:grid-cols-4">
+          {OPEN_LEARNING_LOOP.map((step, index) => (
+            <li key={step.id} className="home-path-step relative min-w-0">
               <span className="font-mono text-[11px] tabular-nums tracking-[0.16em] text-[#a99058]">
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <p className="mt-3 whitespace-nowrap text-[13px] text-[#d8d4c7]">{step}</p>
+              <p className="mt-3 whitespace-nowrap text-[13px] text-[#d8d4c7]">{step.label}</p>
+              <p className="mt-2 max-w-[13rem] text-[11px] leading-5 text-[#85867f]">{step.description}</p>
             </li>
           ))}
         </ol>
 
         <div className="home-collections mt-16 grid sm:mt-20 sm:grid-cols-2">
           {COLLECTIONS.map((collection, index) => (
-            <Link key={collection.title} to={collection.to} className="home-collection group relative py-8 sm:py-10">
+            <Destination key={collection.title} to={collection.to} external={collection.external}
+              className="home-collection group relative block py-8 sm:py-10">
               <div className="flex items-center justify-between">
                 <collection.icon className="h-[19px] w-[19px] text-[#c7ad70]" strokeWidth={1.55} />
                 <span className="font-mono text-[10px] tabular-nums tracking-[0.15em] text-[#696a64]">
@@ -133,7 +158,7 @@ export default function Home() {
               <span className="mt-6 inline-flex items-center gap-2 text-[12px] text-[#baaa83]">
                 {collection.label} <ArrowRight className="home-cta-arrow h-[14px] w-[14px]" />
               </span>
-            </Link>
+            </Destination>
           ))}
         </div>
       </section>
@@ -143,13 +168,13 @@ export default function Home() {
           <div>
             <p className="home-section-kicker">认真理解的时间</p>
             <p className="mt-6 max-w-[36rem] text-[17px] leading-8 text-[#d8d4c7] sm:text-[20px] sm:leading-9">
-              没有信息流，没有打卡，也没有焦虑。
+              不用信息流制造焦虑，也不靠答案替代理解。
               <br />
-              只有题目、推导，和真正弄懂一件事。
+              从一个概念开始，认真看清它为什么成立。
             </p>
           </div>
           <Link to="/principles" className="group inline-flex items-center gap-2 text-[13px] text-[#baaa83] hover:text-[#f0e8d3]">
-            从第一性原理开始 <ArrowRight className="home-cta-arrow h-[15px] w-[15px]" />
+            从理解数学开始 <ArrowRight className="home-cta-arrow h-[15px] w-[15px]" />
           </Link>
         </div>
       </section>

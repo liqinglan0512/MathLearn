@@ -13,6 +13,7 @@ import {
   Sun,
 } from 'lucide-react'
 import { getArticleLearningProfile, getKnowledgeNodes, getLabMeta } from '@/lib/learning'
+import { getLearningUnit, getLearningUnitByArticleId } from '@/lib/learning-units'
 import { store } from '@/lib/store'
 import { getPassageBlockVersion } from '@/lib/annotations'
 import { Markdown } from '@/components/Markdown'
@@ -21,6 +22,7 @@ import { PassageAnnotations } from '@/components/reading/PassageAnnotations'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CommentThread } from '@/components/CommentThread'
+import { FEATURES } from '@/config/features'
 
 type ReaderLevel = 'intuition' | 'rigorous' | 'extension'
 type ReaderTheme = 'dark' | 'paper'
@@ -83,9 +85,14 @@ export default function ArticleDetail() {
     version: getPassageBlockVersion(`body\n${article.content}`),
   }]
   const profile = getArticleLearningProfile(article)
-  const knowledgeNodes = getKnowledgeNodes(profile.knowledgeIds)
-  const relatedProblems = store.problems().filter((problem) => profile.problemIds.includes(problem.id))
-  const relatedLabs = profile.labIds.map((labId) => getLabMeta(labId))
+  const learningUnit = getLearningUnitByArticleId(article.id)
+  const knowledgeNodes = getKnowledgeNodes(learningUnit?.prerequisiteConceptIds ?? profile.knowledgeIds)
+  const relatedProblems = store.problems().filter((problem) =>
+    (learningUnit?.practiceIds ?? profile.problemIds).includes(problem.id))
+  const relatedLabs = (learningUnit?.visualizationIds ?? profile.labIds).map((labId) => getLabMeta(labId))
+  const nextUnits = (learningUnit?.nextUnitIds ?? [])
+    .map(getLearningUnit)
+    .filter((unit): unit is NonNullable<typeof unit> => unit !== undefined)
   const comments = store.comments().filter((comment) => comment.targetId === article.id)
   const paperMode = theme === 'paper'
   const routes = article.content
@@ -116,7 +123,7 @@ export default function ArticleDetail() {
             onClick={() => nav('/principles')}
             className="inline-flex items-center gap-1.5 text-sm opacity-70 transition-opacity hover:opacity-100"
           >
-            <ArrowLeft className="h-4 w-4" /> 第一性原理
+            <ArrowLeft className="h-4 w-4" /> 理解数学
           </button>
 
           <div className="flex items-center gap-2">
@@ -206,11 +213,17 @@ export default function ArticleDetail() {
         )}
 
         <div className="math-reader-body mt-14 border-t border-current/10 pt-7 sm:mt-16 sm:pt-10">
-          <PassageAnnotations key={article.id} articleId={article.id} paperMode={paperMode} blocks={readingBlocks}>
+          {FEATURES.localDiscussionPrototype ? (
+            <PassageAnnotations key={article.id} articleId={article.id} paperMode={paperMode} blocks={readingBlocks}>
+              <div data-block-id={readingBlocks[0].id} data-block-version={readingBlocks[0].version} data-block-kind="body">
+                <Markdown content={article.content} />
+              </div>
+            </PassageAnnotations>
+          ) : (
             <div data-block-id={readingBlocks[0].id} data-block-version={readingBlocks[0].version} data-block-kind="body">
               <Markdown content={article.content} />
             </div>
-          </PassageAnnotations>
+          )}
         </div>
 
         {profile.conditionChecks.length > 0 && (
@@ -232,7 +245,7 @@ export default function ArticleDetail() {
           </section>
         )}
 
-        {(relatedLabs.length > 0 || relatedProblems.length > 0) && (
+        {(relatedLabs.length > 0 || relatedProblems.length > 0 || nextUnits.length > 0) && (
           <section className="mt-16 border-t border-current/10 pt-9" aria-label="继续完成学习闭环">
             <p className="text-[11px] uppercase tracking-[0.2em] opacity-60">把理解带回现实问题</p>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -262,14 +275,24 @@ export default function ArticleDetail() {
                   </span>
                 </Link>
               ))}
+              {nextUnits.slice(0, 2).map((unit) => (
+                <Link key={unit.id} to={`/principles/${unit.articleId}`}
+                  className="group flex items-start gap-3 rounded-md p-3 transition-colors hover:bg-current/[0.04]">
+                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-[#b8a06a]" />
+                  <span>
+                    <span className="block text-sm font-medium"><MathProse content={unit.title} /></span>
+                    <span className="mt-1 block text-xs leading-6 opacity-70">沿着概念依赖继续学习</span>
+                  </span>
+                </Link>
+              ))}
             </div>
           </section>
         )}
 
-        <section className="mt-16 border-t border-current/10 pt-9">
+        {FEATURES.localDiscussionPrototype && <section className="mt-16 border-t border-current/10 pt-9">
           <h2 className="text-base font-medium">讨论 · {comments.length}</h2>
           <CommentThread targetId={article.id} comments={comments} onPosted={() => bump((current) => current + 1)} />
-        </section>
+        </section>}
       </article>
     </div>
   )

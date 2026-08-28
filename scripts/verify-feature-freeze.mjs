@@ -18,6 +18,13 @@ const [features, app, layout, problems, papers, principles, problemDetail, store
 
 assert.match(features, /publicContribution:\s*false/)
 assert.match(features, /attachmentUpload:\s*false/)
+assert.match(features, /euclidPublic:\s*false/)
+assert.match(features, /challenge:\s*false/)
+assert.match(features, /learningJournal:\s*false/)
+assert.match(features, /aiAssistant:\s*false/)
+assert.match(features, /social:\s*false/)
+assert.match(features, /localIdentityPrototype:\s*Boolean\(import\.meta\.env\??\.DEV\)/)
+assert.match(features, /localDiscussionPrototype:\s*Boolean\(import\.meta\.env\??\.DEV\)/)
 
 for (const route of [
   '/problems/new',
@@ -44,9 +51,9 @@ assert.doesNotMatch(attachments, /accept="image\/\*/)
 assert.match(attachments, /image\/png/)
 assert.match(attachments, /image\/jpeg/)
 assert.match(attachments, /image\/webp/)
-assert.match(attachments, /附件上传在 MathForge 0\.2 中关闭/)
+assert.match(attachments, /附件上传[^\n]{0,40}关闭/)
 
 assert.match(learning, /assertCanModerateReview\(actor\)/)
-assert.match(layout, /账户、批注和学习数据仅保存在当前浏览器中/)
+assert.match(layout, /学习标记[^\n]{0,40}当前浏览器/)
 
-console.log('FEATURE_FREEZE_PASS ui=5 routes=4 data_methods=4 attachments=disabled review_guard=admin')
+console.log('FEATURE_FREEZE_PASS ui=5 routes=4 data_methods=4 frozen=upload,euclid,ai,challenge,journal,social review_guard=admin')

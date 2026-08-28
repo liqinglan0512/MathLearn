@@ -23,9 +23,12 @@ export default function Login() {
 
   return (
     <div className="mx-auto max-w-sm py-16">
-      <Sigma className="mx-auto h-8 w-8 text-indigo-300" />
-      <h1 className="mt-4 text-center text-2xl font-semibold">登录 MathForge</h1>
-      <p className="mt-2 text-center text-sm text-neutral-400">登录后可保存批注、参与已有内容讨论</p>
+      <Sigma className="mx-auto h-8 w-8 text-[#c7ad70]" />
+      <p className="mt-4 text-center text-[10px] tracking-[0.2em] text-[#a58e60]">LOCAL IDENTITY PROTOTYPE</p>
+      <h1 className="mt-3 text-center text-2xl font-semibold">本地原型登录</h1>
+      <p className="mt-2 text-center text-sm leading-6 text-neutral-400">
+        仅供本机开发功能使用，不会创建云端账户。请勿输入或复用真实密码。
+      </p>
       <form onSubmit={submit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="account">邮箱或手机号</Label>
@@ -56,8 +59,8 @@ export default function Login() {
       </form>
       <p className="mt-6 text-center text-sm text-neutral-400">
         还没有账号？{' '}
-        <Link to="/register" className="text-indigo-300 hover:underline">
-          立即注册
+        <Link to="/register" className="text-[#c7ad70] hover:underline">
+          创建本地测试身份
         </Link>
       </p>
     </div>

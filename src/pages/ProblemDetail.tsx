@@ -12,6 +12,7 @@ import {
   recordProofReview, setKnowledgeStatus, type KnowledgeNode, type KnowledgeStatus,
   type ProblemLearningProfile, type ProofVerification,
 } from '@/lib/learning'
+import { getLearningUnitsForConcept } from '@/lib/learning-units'
 import { canUseAdminContentManagement } from '@/lib/permissions'
 import { FEATURES } from '@/config/features'
 import { useAuth } from '@/lib/auth-context'
@@ -63,9 +64,13 @@ export default function ProblemDetail() {
   const profile = getProblemLearningProfile(problem)
   const solutions = store.solutions().filter((solution) => solution.problemId === problem.id)
   const comments = store.comments().filter((comment) => comment.targetId === problem.id)
-  const articles = profile.articleIds
-    .map((articleId) => store.articles().find((article) => article.id === articleId))
+  const directUnits = [...new Map(profile.focusIds
+    .flatMap(getLearningUnitsForConcept)
+    .map((unit) => [unit.id, unit])).values()]
+  const articles = directUnits
+    .map((unit) => store.articles().find((article) => article.id === unit.articleId))
     .filter((article): article is NonNullable<typeof article> => article !== undefined)
+  const directLabIds = [...new Set(directUnits.flatMap((unit) => unit.visualizationIds))]
   const variants = profile.variantIds
     .map((problemId) => store.problems().find((candidate) => candidate.id === problemId))
     .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== undefined)
@@ -112,11 +117,11 @@ export default function ProblemDetail() {
             <SectionHeading id="learning-loop-heading" eyebrow="LEARNING PATH" title="把不会的地方，接回完整逻辑"
               description="从前置知识回到推导，再用动态实验与变式检验重新理解。" />
             <div className="mt-7 grid gap-px overflow-hidden rounded-[5px] bg-white/[0.055] sm:grid-cols-2">
-              <PathCard icon={<BookOpen className="h-[18px] w-[18px]" />} label="回到第一性原理"
+              <PathCard icon={<BookOpen className="h-[18px] w-[18px]" />} label="回到理解数学"
                 description={articles[0]?.title ?? '从定义与逻辑条件重新开始'}
                 to={articles[0] ? `/principles/${articles[0].id}` : '/principles'} />
-              <PathCard icon={<FlaskConical className="h-[18px] w-[18px]" />} label="进入概念实验室"
-                description={getLabMeta(profile.labIds[0]).description} to={getLabMeta(profile.labIds[0]).href} />
+              {directLabIds[0] && <PathCard icon={<FlaskConical className="h-[18px] w-[18px]" />} label="进入概念实验室"
+                description={getLabMeta(directLabIds[0]).description} to={getLabMeta(directLabIds[0]).href} />}
               <PathCard icon={<Lightbulb className="h-[18px] w-[18px]" />} label="逐级打开提示"
                 description="只揭开下一层观察，不提前泄露完整证明。" to="#hints" />
               <PathCard icon={<GitBranch className="h-[18px] w-[18px]" />} label="比较迁移与变式"
@@ -155,7 +160,7 @@ export default function ProblemDetail() {
 
           {articles.length > 0 && (
             <section className="mt-14" aria-labelledby="principle-links-heading">
-              <SectionHeading id="principle-links-heading" eyebrow="FIRST PRINCIPLES" title="把定理推回它成立的地方" />
+              <SectionHeading id="principle-links-heading" eyebrow="UNDERSTAND" title="把定理推回它成立的地方" />
               <div className="mt-5 divide-y divide-white/[0.055]">
                 {articles.map((article) => (
                   <Link key={article.id} to={`/principles/${article.id}`} className="group flex items-start justify-between gap-4 py-4">
@@ -202,16 +207,16 @@ export default function ProblemDetail() {
             )}
           </section>
 
-          <Separator className="my-12 bg-white/[0.075]" />
+          {FEATURES.localDiscussionPrototype && <><Separator className="my-12 bg-white/[0.075]" />
           <section><h2 className="flex items-center gap-2 text-[17px] font-medium text-[#e9e2d0]">
             <MessageSquare className="h-4 w-4 text-[#c7ad70]" /> 讨论 · {comments.length}</h2>
             <CommentThread targetId={problem.id} comments={comments} onPosted={() => bump((value) => value + 1)} />
-          </section>
+          </section></>}
         </div>
 
         <aside className="space-y-10 lg:sticky lg:top-24" aria-label="个人知识路径">
           <section><p className="text-[10px] font-medium tracking-[0.22em] text-[#b29b69]">PREREQUISITES</p>
-            <h2 className="mt-2 text-[16px] font-medium text-[#e9e2d0]">前置知识链</h2>
+            <h2 className="mt-2 text-[16px] font-medium text-[#e9e2d0]">解题知识链</h2>
             <p className="mt-1 text-[12px] leading-6 text-[#929188]">点击状态，按实际理解程度标记。</p>
             <KnowledgePath profile={profile} onChange={() => { setNotice('个人知识标记已保存。'); bump((value) => value + 1) }} />
           </section>
@@ -231,9 +236,9 @@ export default function ProblemDetail() {
             {matchingGaps.slice(0, 2).map((gap) => <p key={gap.node.id} className="mt-2 text-[12px] leading-6 text-[#c9c3b4]">
               「<MathProse content={gap.node.label} />」出现在 {gap.problemIds.length} 道你标记卡住的题中；这是复习线索，不是诊断结论。</p>)}
           </section>}
-          <section><p className="text-[10px] font-medium tracking-[0.22em] text-[#b29b69]">CONCEPT LABS</p>
+          {directLabIds.length > 0 && <section><p className="text-[10px] font-medium tracking-[0.22em] text-[#b29b69]">CONCEPT LABS</p>
             <h2 className="mt-2 text-[16px] font-medium text-[#e9e2d0]">对应动态实验</h2>
-            <div className="mt-3 space-y-3">{profile.labIds.map((labId) => {
+            <div className="mt-3 space-y-3">{directLabIds.map((labId) => {
               const lab = getLabMeta(labId)
               return <Link key={lab.id} to={lab.href} className="group block">
                 <span className="flex items-center justify-between gap-2 text-[13px] text-[#d3cec0]"><MathProse content={lab.label} />
@@ -241,7 +246,7 @@ export default function ProblemDetail() {
                 <span className="mt-1 block text-[11px] leading-5 text-[#929188]"><MathProse content={lab.description} /></span>
               </Link>
             })}</div>
-          </section>
+          </section>}
         </aside>
       </div>
     </div>
@@ -330,9 +335,9 @@ function SolutionCard({ index, solution, onChange }: {
         <span className={`inline-flex items-center gap-1 text-[11px] ${status === 'unreviewed' ? 'text-[#c6ab77]' : 'text-[#a9b89b]'}`}>
           {status === 'unreviewed' ? <ShieldAlert className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
           {VERIFICATION_LABEL[status]}</span>
-        <button onClick={() => { store.likeSolution(solution.id); onChange() }} aria-label={`喜欢这份解法，当前 ${solution.likes} 次`}
+        {FEATURES.localDiscussionPrototype && <button onClick={() => { store.likeSolution(solution.id); onChange() }} aria-label={`喜欢这份解法，当前 ${solution.likes} 次`}
           className="flex items-center gap-1 text-[11px] text-[#96958d] hover:text-[#d9998e]">
-          <Heart className="h-4 w-4" /> {solution.likes}</button>
+          <Heart className="h-4 w-4" /> {solution.likes}</button>}
       </div>
     </div>
     <div className="mt-5"><Markdown content={solution.content} /><AttachmentList items={solution.attachments} /></div>
@@ -354,13 +359,13 @@ function SolutionCard({ index, solution, onChange }: {
           <Button size="sm" disabled={isOwnSolution} onClick={() => verify('rigorous')}>确认严格证明</Button>
         </div>
       )}
-      {proofComments.length > 0 && <div className="mt-5 space-y-3"><p className="text-[12px] font-medium text-[#ded9cc]">步骤疑点与讨论</p>
+      {FEATURES.localDiscussionPrototype && proofComments.length > 0 && <div className="mt-5 space-y-3"><p className="text-[12px] font-medium text-[#ded9cc]">步骤疑点与讨论</p>
         {proofComments.map((comment) => <div key={comment.id} className="border-l border-[#c7ad70]/35 pl-3">
           <p className="text-[11px] text-[#96958d]">{comment.authorName} · {fmt(comment.createdAt)}</p>
           <p className="mt-1 text-[12px] leading-6 text-[#d0cabe]"><MathProse content={comment.content} /></p></div>)}</div>}
-      <form onSubmit={submitConcern} className="mt-5"><Textarea value={concern} onChange={(event) => setConcern(event.target.value)} rows={3}
+      {FEATURES.localDiscussionPrototype && <form onSubmit={submitConcern} className="mt-5"><Textarea value={concern} onChange={(event) => setConcern(event.target.value)} rows={3}
         placeholder={user ? '指出具体步骤、缺失条件或可能的反例…' : '登录后指出具体步骤或逻辑疑点'} className="text-[12px]" />
-        <div className="mt-2 flex justify-end"><Button size="sm" type="submit" disabled={!concern.trim()}>记录步骤疑点</Button></div></form>
+        <div className="mt-2 flex justify-end"><Button size="sm" type="submit" disabled={!concern.trim()}>记录步骤疑点</Button></div></form>}
       {auditNotice && <p role="status" className="mt-3 text-[11px] leading-5 text-[#c2b18d]">{auditNotice}</p>}
     </div>}
   </div>

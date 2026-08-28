@@ -53,7 +53,7 @@ export function assertCanSubmitPublicContent(
   if (!canSubmitPublicContent(actor, features)) {
     throw new PermissionDeniedError(
       'PUBLIC_CONTRIBUTION_DISABLED',
-      'MathForge 0.2 已关闭公开投稿；保存内容不等于发布。',
+      'MathForge 当前关闭站内公开投稿；保存内容不等于发布。',
     )
   }
 }
@@ -85,7 +85,7 @@ export function assertAttachmentsAllowed(
 ): void {
   if (attachments.length === 0) return
   if (!canUploadAttachments(actor, features)) {
-    throw new PermissionDeniedError('ATTACHMENT_UPLOAD_DISABLED', 'MathForge 0.2 已关闭附件上传。')
+    throw new PermissionDeniedError('ATTACHMENT_UPLOAD_DISABLED', 'MathForge 当前已关闭附件上传。')
   }
   if (attachments.some((attachment) => !isSafeStoredAttachment(attachment))) {
     throw new PermissionDeniedError(

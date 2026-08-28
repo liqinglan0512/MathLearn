@@ -2,15 +2,9 @@ import { store, uid } from './store'
 import type { Article, Problem, Solution } from './types'
 import type { User } from './types'
 import { assertCanModerateReview } from './permissions'
+import { getMathLab, type LabId, type MathLab } from './labs'
 
-export type LabId =
-  | 'derivative'
-  | 'integral'
-  | 'linear'
-  | 'taylor'
-  | 'probability'
-  | 'ode'
-  | 'plotter'
+export type { LabId } from './labs'
 
 export type KnowledgeStatus = 'unseen' | 'learning' | 'weak' | 'mastered' | 'review'
 
@@ -31,11 +25,25 @@ export interface LearningHint {
 export interface ProblemLearningProfile {
   problemId: string
   summary: string
+  /**
+   * Every concept required by the current solution path. focusIds is a
+   * subset identifying what the problem is intended to test.
+   */
   prerequisiteIds: string[]
+  focusIds: string[]
+  /** Related ideas that are useful extensions, but are not required. */
+  extensionIds: string[]
   articleIds: string[]
   labIds: LabId[]
   hints: LearningHint[]
   variantIds: string[]
+}
+
+export interface ProblemConceptProfile {
+  problemId: string
+  prerequisiteIds: string[]
+  focusIds: string[]
+  extensionIds: string[]
 }
 
 export interface ArticleLearningProfile {
@@ -53,12 +61,7 @@ export interface ArticleLearningProfile {
   counterexample?: string
 }
 
-export interface LabMeta {
-  id: LabId
-  label: string
-  description: string
-  href: string
-}
+export type LabMeta = MathLab & { readonly href: string }
 
 export type AttemptOutcome = 'struggled' | 'solved' | 'review' | 'failed' | 'passed'
 
@@ -103,44 +106,6 @@ const STATUS_KEY = 'mf_learning_knowledge_status_v1'
 const ATTEMPTS_KEY = 'mf_learning_attempts_v1'
 const PROOF_REVIEWS_KEY = 'mf_proof_reviews_v1'
 
-const LABS: Record<LabId, Omit<LabMeta, 'href'>> = {
-  derivative: {
-    id: 'derivative',
-    label: '割线与导数',
-    description: '移动差分步长，观察割线怎样接近切线。',
-  },
-  integral: {
-    id: 'integral',
-    label: '黎曼和与积分',
-    description: '细化分割，比较矩形和与曲边面积。',
-  },
-  linear: {
-    id: 'linear',
-    label: '线性变换实验室',
-    description: '拖动矩阵元素，观察网格、面积与不变方向。',
-  },
-  taylor: {
-    id: 'taylor',
-    label: '泰勒逼近实验室',
-    description: '调整展开阶数，看局部多项式如何贴近原函数。',
-  },
-  probability: {
-    id: 'probability',
-    label: '概率与大数实验',
-    description: '改变样本量，观察随机波动与分布变化。',
-  },
-  ode: {
-    id: 'ode',
-    label: '微分方程方向场',
-    description: '改变初始条件，比较方向场中的解轨线。',
-  },
-  plotter: {
-    id: 'plotter',
-    label: '函数图像实验室',
-    description: '绘制函数图像，从图形检查直觉和边界。',
-  },
-}
-
 function node(
   id: string,
   label: string,
@@ -184,7 +149,7 @@ const KNOWLEDGE_GRAPH: Record<string, KnowledgeNode> = Object.fromEntries(
     node('gcd', '最大公因数与裴蜀定理', '通过带余除法和整数组合刻画最大公因数。', [], ['a10']),
     node('probability', '概率空间与期望', '区分事件概率、随机变量和期望是否有限。', [], ['a7'], ['probability']),
     node('conditional-probability', '条件概率', '在非零概率事件上重新归一化概率。', ['probability'], ['a7'], ['probability']),
-    node('random-walk', '对称随机游动', '分析由独立对称步长累积得到的位置过程。', ['probability'], ['a14', 'a7'], ['probability']),
+    node('random-walk', '对称随机游动', '分析由独立对称步长累积得到的位置过程。', ['probability'], ['a14'], ['probability']),
     node('stopping-time', '首达时与停时', '区分几乎必然到达和首达时间具有有限期望。', ['random-walk'], ['a14'], ['probability']),
     node('martingale', '鞅与可选停止条件', '使用停止定理之前检查有界停时或可积性假设。', ['conditional-probability', 'stopping-time'], ['a14'], ['probability']),
     node('likelihood', '似然函数', '固定观测样本，把联合概率看作参数的函数。', ['probability'], ['a8'], ['probability']),
@@ -199,6 +164,8 @@ const PROBLEM_PROFILES: Record<string, ProblemLearningProfile> = {
     problemId: 'p1',
     summary: '把递推数列的增长尺度归一化，再用 Stolz 将商的极限转为差分比。',
     prerequisiteIds: ['sequence-limit', 'monotonicity', 'asymptotic-order', 'stolz'],
+    focusIds: ['asymptotic-order', 'stolz'],
+    extensionIds: [],
     articleIds: ['a12', 'a3', 'a1', 'a9'],
     labIds: ['derivative', 'ode'],
     hints: [
@@ -213,6 +180,8 @@ const PROBLEM_PROFILES: Record<string, ProblemLearningProfile> = {
     problemId: 'p2',
     summary: '从边界条件恢复函数，再把积分形式的 Cauchy–Schwarz 用于导数。',
     prerequisiteIds: ['inner-product', 'cauchy-schwarz', 'riemann-integral', 'fundamental-theorem'],
+    focusIds: ['cauchy-schwarz', 'fundamental-theorem'],
+    extensionIds: [],
     articleIds: ['a2', 'a6', 'a13'],
     labIds: ['linear', 'integral'],
     hints: [
@@ -227,6 +196,8 @@ const PROBLEM_PROFILES: Record<string, ProblemLearningProfile> = {
     problemId: 'p3',
     summary: '把矩阵乘积看成映射复合，用核空间与像空间的维数公式估计秩。',
     prerequisiteIds: ['linear-map', 'dimension', 'matrix-rank'],
+    focusIds: ['matrix-rank'],
+    extensionIds: [],
     articleIds: ['a4', 'a5'],
     labIds: ['linear'],
     hints: [
@@ -241,6 +212,8 @@ const PROBLEM_PROFILES: Record<string, ProblemLearningProfile> = {
     problemId: 'p4',
     summary: '以焦点为极点表示弦长，追踪直线方向变化时的几何极值。',
     prerequisiteIds: ['ellipse', 'polar-coordinate'],
+    focusIds: ['polar-coordinate'],
+    extensionIds: [],
     articleIds: ['a11'],
     labIds: ['plotter'],
     hints: [
@@ -255,6 +228,8 @@ const PROBLEM_PROFILES: Record<string, ProblemLearningProfile> = {
     problemId: 'p5',
     summary: '对“至少一个不动点”使用容斥，再把交替和识别为指数函数的部分和。',
     prerequisiteIds: ['permutation', 'inclusion-exclusion', 'power-series'],
+    focusIds: ['inclusion-exclusion', 'power-series'],
+    extensionIds: [],
     articleIds: ['a1'],
     labIds: ['taylor'],
     hints: [
@@ -269,6 +244,8 @@ const PROBLEM_PROFILES: Record<string, ProblemLearningProfile> = {
     problemId: 'p6',
     summary: '在素数模意义下配对乘法逆元，再用真因子反证 Wilson 定理的逆命题。',
     prerequisiteIds: ['modular-arithmetic', 'gcd', 'multiplicative-inverse', 'primality'],
+    focusIds: ['multiplicative-inverse', 'primality'],
+    extensionIds: [],
     articleIds: ['a10'],
     labIds: ['plotter'],
     hints: [
@@ -283,6 +260,8 @@ const PROBLEM_PROFILES: Record<string, ProblemLearningProfile> = {
     problemId: 'p7',
     summary: '检查对数表达式的定义域与最终单调性，再连续两次换元比较反常积分。',
     prerequisiteIds: ['sequence-limit', 'monotonicity', 'positive-series', 'riemann-integral', 'integral-test'],
+    focusIds: ['integral-test'],
+    extensionIds: [],
     articleIds: ['a3', 'a6'],
     labIds: ['integral', 'plotter'],
     hints: [
@@ -296,8 +275,10 @@ const PROBLEM_PROFILES: Record<string, ProblemLearningProfile> = {
   p8: {
     problemId: 'p8',
     summary: '区分“几乎必然到达”和“平均等待有限”，检查停止定理的可积性前提。',
-    prerequisiteIds: ['probability', 'conditional-probability', 'random-walk', 'stopping-time', 'martingale'],
-    articleIds: ['a14', 'a7'],
+    prerequisiteIds: ['probability', 'random-walk', 'stopping-time'],
+    focusIds: ['random-walk', 'stopping-time'],
+    extensionIds: ['conditional-probability', 'martingale'],
+    articleIds: ['a14'],
     labIds: ['probability'],
     hints: [
       { title: '提示一 · 命中概率不是期望', content: '一维对称随机游动几乎必然到达 $+N$，但这不能推出首达时间的期望有限。' },
@@ -557,12 +538,15 @@ export function getProblemLearningProfile(problem: Problem): ProblemLearningProf
   const known = PROBLEM_PROFILES[problem.id]
   if (known) return known
 
+  const conceptIds = problem.tags.map(customNodeId)
   return {
     problemId: problem.id,
     summary: problem.tags.length > 0
       ? `围绕${problem.tags.slice(0, 3).join('、')}，从定义与适用条件出发建立解题路径。`
       : `从${problem.chapter}的基本定义、适用条件与关键构造出发分析这道题。`,
-    prerequisiteIds: problem.tags.map(customNodeId),
+    prerequisiteIds: conceptIds,
+    focusIds: [...conceptIds],
+    extensionIds: [],
     articleIds: relatedArticleIds(problem),
     labIds: relatedLabs(problem),
     hints: [
@@ -612,8 +596,55 @@ export function getKnowledgeNodes(ids: readonly string[]): KnowledgeNode[] {
   return ids.map(getKnowledgeNode).filter((entry): entry is KnowledgeNode => entry !== undefined)
 }
 
+export function listKnowledgeNodes(): KnowledgeNode[] {
+  return Object.values(KNOWLEDGE_GRAPH)
+}
+
+function conceptProfile(profile: ProblemLearningProfile): ProblemConceptProfile {
+  return {
+    problemId: profile.problemId,
+    prerequisiteIds: [...profile.prerequisiteIds],
+    focusIds: [...profile.focusIds],
+    extensionIds: [...profile.extensionIds],
+  }
+}
+
+export function getProblemConceptProfile(problem: Problem): ProblemConceptProfile {
+  return conceptProfile(getProblemLearningProfile(problem))
+}
+
+/** Learner-facing search spans visible metadata, mathematical content, and concept labels. */
+export function matchesProblemLearningQuery(problem: Problem, query: string): boolean {
+  const keyword = query.trim().toLocaleLowerCase()
+  if (!keyword) return true
+  const profile = getProblemLearningProfile(problem)
+  const knowledgeLabels = getKnowledgeNodes(profile.prerequisiteIds).map((entry) => entry.label).join(' ')
+  return `${problem.title} ${problem.chapter} ${problem.difficulty} ${problem.competition} ${problem.statement} ${problem.tags.join(' ')} ${profile.summary} ${knowledgeLabels}`
+    .toLocaleLowerCase()
+    .includes(keyword)
+}
+
+/** Canonical bundled relationships only; local legacy problems stay outside the formal curriculum. */
+export function listSeedProblemConceptProfiles(): ProblemConceptProfile[] {
+  return Object.values(PROBLEM_PROFILES).map(conceptProfile)
+}
+
+/** Reverse Concept to Practice mapping. A practice tests a focus concept, not merely a related topic. */
+export function getPracticeIdsForConcept(conceptId: string): string[] {
+  return Object.values(PROBLEM_PROFILES)
+    .filter((profile) => profile.focusIds.includes(conceptId))
+    .map((profile) => profile.problemId)
+}
+
+/** Problems that require a concept, including concepts directly tested by the problem. */
+export function getProblemIdsUsingConcept(conceptId: string): string[] {
+  return Object.values(PROBLEM_PROFILES)
+    .filter((profile) => profile.prerequisiteIds.includes(conceptId))
+    .map((profile) => profile.problemId)
+}
+
 export function getLabMeta(id: LabId): LabMeta {
-  return { ...LABS[id], href: `/viz?lab=${id}` }
+  return { ...getMathLab(id), href: `/viz?lab=${id}` }
 }
 
 export function getKnowledgeStatus(id: string): KnowledgeStatus {

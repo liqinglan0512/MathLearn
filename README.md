@@ -1,15 +1,52 @@
 # MathForge
 
-MathForge 是一个以“理解数学”为核心的长期数学学习社区项目。它关注的不只是答案，还包括定义、严格证明、证明依赖、局部讨论，以及理解如何随修订逐步演化。
+MathForge 正在建设为一个公开源码、以真正理解数学为目标的数学学习平台。
 
-## 当前阶段
+> An open-source mathematics learning platform focused on understanding mathematics from intuition, definitions, structure and rigorous reasoning.
 
-项目正在收束为 **MathForge 0.2**：从高完成度前端原型转向可信、可维护、可继续扩展的工程基础。本轮冻结横向功能扩张，优先处理权限边界、版本与审核模型、工程质量、加载性能和《几何原本》编辑试验。
+它不以题目数量、资源数量或站内活跃度作为当前核心价值。MathForge 0.3 — **Open Learning Core** 只围绕一条学习路径展开：
 
-- 公共投稿和附件上传默认关闭；内部内容管理仅供管理员开发流程使用。
-- 数据目前仍保存在当前浏览器的 `localStorage`，不是长期云端存储。
-- 《几何原本》属于实验性内容。现有现代中文包含机器辅助译文，不能视为已经全部人工审核、数学正确或正式出版。
-- 保存草稿不等于发布；正式数学内容需要独立审核与版本记录。
+```text
+Understand → Visualize → Practice → Contribute
+理解       → 看见       → 检验     → 共同改进
+```
+
+## 当前产品方向
+
+- **理解数学**：从问题、直觉和基本对象出发，写清定义、条件、推导与反例。
+- **可视化**：通过可操作的数学实验观察结构，而不是增加与数学无关的特效。
+- **练习**：用少量题目检验理解，并把卡点关联回前置概念。
+- **工具**：保留公式编辑、基础计算等辅助能力，但不让工具取代学习。
+- **GitHub 协作**：Issue、Pull Request、Code Review 和 Git history 是当前唯一正式贡献路径。
+
+站内公开投稿、附件上传、AI 解题、挑战赛、学习日记、排行和社交功能均保持关闭。账户、批注和学习记录仍是 `localStorage` 本地原型，不是云端账户、生产社区或长期备份。
+
+## Open Learning Core
+
+0.3 先从现有可靠正文中选择少量示范主题，建立 `LearningUnit` 元数据与概念—实验—练习关系。加入目录只表示 **pilot 课程索引状态**，不代表数学内容已经完成独立审校或正式发布。
+
+长期学习单元可以逐步容纳：问题起点、概念需要、直觉、定义构造、正式定义、定义动机、证明、必要条件、反例、可视化、应用、理解检验、推广，以及前置/后续知识。本轮不为填满结构而批量生成数学正文。
+
+## 《几何原本》实验归档
+
+MathForge 0.2 的《几何原本》试验验证了 Revision、SemanticBlock、依赖图、稳定批注锚点、来源问题和可视化信任模型。它在 0.3 中从公开学习课程下架，但**没有删除**：
+
+- 原始语料与 607 条派生内容保留；
+- 7152 个 SemanticBlock、依赖边、来源问题与修订历史保留；
+- 按需加载 repository、内部编辑原型与相关测试保留；
+- 机器稿继续保持 `raw_machine`，不会自动升级为已审核或已发布。
+
+本次处理是产品归档，不是访问控制或数据销毁。静态语料仍存在仓库中，开发环境保留内部恢复入口；未来若重新启用，必须先经过明确的产品与数学审核决策。
+
+## 参与贡献
+
+仓库：[github.com/liqinglan0512/MathLearn](https://github.com/liqinglan0512/MathLearn)
+
+请先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)。可以通过 GitHub Issue 报告数学错误、提出解释改进、请求可视化、报告 Bug 或建议学习单元；代码与内容修改通过 Fork、分支和 Pull Request 提交。
+
+数学证明不能仅因为 LLM 判断正确就合并，也不接受未经核验的 AI 批量内容。PR 合并不自动等于 `math_reviewed`，也不自动成为正式学习单元。
+
+> **许可证边界**：仓库目前尚未包含 `LICENSE`。软件代码许可证、数学内容许可证与历史语料的再分发边界需要 Leo 决策。在许可证确定前，“open-source”是产品目标与协作方向；公开源码不等于已经授予完整的开源许可。
 
 ## 技术栈
 
@@ -30,7 +67,15 @@ npm run dev
 
 默认开发地址由 Vite 输出；项目配置的首选端口为 `3000`。
 
-## 质量命令
+## 质量门
+
+运行完整检查：
+
+```bash
+npm run check
+```
+
+也可以分别运行：
 
 ```bash
 npm run typecheck
@@ -42,45 +87,22 @@ npm run check:contracts
 npm run build
 ```
 
-运行完整工程门槛：
+`check:hygiene` 检查构建产物、依赖目录、调试文件和本地任务状态是否误入源码包，不会删除文件。`check:contracts` 同时保留 0.2 的可信内容模型门槛，并核对 0.3 的公开产品方向、冻结开关、Euclid 归档可恢复性与完成文档。
 
-```bash
-npm run check
-```
-
-`check:hygiene` 检查已跟踪文件和所有未忽略的待提交候选，确保构建产物、依赖目录、浏览器 profile、调试文件和本地任务状态不会进入源码包；它不会删除任何文件。`check:contracts` 同时核对基线文档、投稿冻结、《几何原本》621 个按需内容文件及 0.2 完成报告的可信边界。
-
-预览生产构建：
-
-```bash
-npm run preview
-```
+依赖告警、当前可达性与最小升级建议记录在 [`docs/DEPENDENCY_SECURITY_TRIAGE.md`](./docs/DEPENDENCY_SECURITY_TRIAGE.md)。本轮不运行破坏性的 `npm audit fix --force`。
 
 ## 项目结构
 
 ```text
 src/
   components/       页面组件、数学阅读与交互组件
-  lib/              数据模型、存储、权限与数学内容适配
+  config/           产品策略与 feature flags
+  lib/              学习关系、数据模型、存储与权限
   pages/            路由页面
-scripts/            语料构建与仓库校验脚本
+scripts/            内容构建与仓库契约校验
 tests/              自动化测试
-docs/               0.2 架构、流程、权限与验收文档
+docs/               产品方向、架构、流程、安全与验收证据
 .github/workflows/  持续集成
 ```
 
-## 数据与内容边界
-
-当前账户、批注和学习记录只存在当前浏览器中。清除浏览器数据或更换设备会丢失这些本地数据；不要把它们当作已备份的正式内容。
-
-《几何原本》保留可追溯的英文底本、历史中文材料和机器辅助现代中文。本地正式稿还绑定其所依据的静态 Revision 与内容哈希；底本变化时停止自动覆盖并等待人工迁移。机器内容必须保持其真实状态，不能自动升级为 `math_reviewed` 或 `published`。数学内容的最终判断保留给人工编辑。
-
-## 贡献状态
-
-MathForge 0.2 暂不开放公共投稿或文件上传。请不要绕过 feature flags、路由守卫或数据层限制恢复上传入口。未来投稿将遵循草稿、待审核、退修、批准和发布的显式工作流。
-
-## 安全说明
-
-- Markdown 渲染不得开启未经净化的 raw HTML。
-- 公共文件上传保持关闭，不接受 HTML、SVG、ZIP 或任意 MIME 内容。
-- `node_modules`、`dist`、调试截图、浏览器 profile、缓存和本地任务状态不得提交到源码仓库。
+Markdown 渲染不得开启未经净化的 raw HTML；公开文件上传继续关闭；`node_modules`、`dist`、浏览器 profile、缓存与本地任务状态不得提交到源码仓库。

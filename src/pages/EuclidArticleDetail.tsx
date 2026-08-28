@@ -226,7 +226,10 @@ export default function EuclidArticleDetail() {
   }
 
   const paperMode = theme === 'paper'
-  const comments = store.comments().filter((comment) => comment.targetId === entry.contentItem.id)
+  const localDiscussionEnabled = FEATURES.localDiscussionPrototype
+  const comments = localDiscussionEnabled
+    ? store.comments().filter((comment) => comment.targetId === entry.contentItem.id)
+    : []
   const canEdit = FEATURES.adminContentManagement && canUseAdminContentManagement(user)
 
   function toggleTheme() {
@@ -315,9 +318,13 @@ export default function EuclidArticleDetail() {
         />
 
         <div className="math-reader-body mt-14 border-t border-current/10 pt-7 sm:mt-16 sm:pt-10">
-          <PassageAnnotations articleId={entry.contentItem.id} paperMode={paperMode} blocks={annotationBlocks}>
+          {localDiscussionEnabled ? (
+            <PassageAnnotations articleId={entry.contentItem.id} paperMode={paperMode} blocks={annotationBlocks}>
+              <EuclidSemanticBlocks entry={entry} publishedRevision={publishedRevision} annotationVersions={annotationBlocks} />
+            </PassageAnnotations>
+          ) : (
             <EuclidSemanticBlocks entry={entry} publishedRevision={publishedRevision} annotationVersions={annotationBlocks} />
-          </PassageAnnotations>
+          )}
         </div>
 
         <EuclidDependencySection entry={entry} />
@@ -338,10 +345,12 @@ export default function EuclidArticleDetail() {
           </section>
         )}
 
-        <section className="mt-16 border-t border-current/10 pt-9">
-          <h2 className="text-base font-medium">讨论 · {comments.length}</h2>
-          <CommentThread targetId={entry.contentItem.id} comments={comments} onPosted={() => bump((current) => current + 1)} />
-        </section>
+        {localDiscussionEnabled && (
+          <section className="mt-16 border-t border-current/10 pt-9">
+            <h2 className="text-base font-medium">讨论 · {comments.length}</h2>
+            <CommentThread targetId={entry.contentItem.id} comments={comments} onPosted={() => bump((current) => current + 1)} />
+          </section>
+        )}
       </article>
     </div>
   )

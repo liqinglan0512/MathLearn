@@ -8,6 +8,7 @@ import {
   getKnowledgeNodes,
   getLearningSnapshot,
   getProblemLearningProfile,
+  matchesProblemLearningQuery,
 } from '@/lib/learning'
 import { CHAPTERS, COMPETITIONS, DIFFICULTIES } from '@/lib/types'
 import { useAuth } from '@/lib/auth-context'
@@ -29,7 +30,7 @@ export default function Problems() {
   const { user } = useAuth()
   const nav = useNavigate()
   const [params] = useSearchParams()
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(params.get('q') ?? '')
   const [chapter, setChapter] = useState(params.get('chapter') ?? '')
   const [difficulty, setDifficulty] = useState('')
   const [competition, setCompetition] = useState('')
@@ -39,17 +40,13 @@ export default function Problems() {
   const solutions = store.solutions()
   const snapshot = getLearningSnapshot()
   const gaps = diagnoseKnowledgeGaps()
-  const keyword = query.trim().toLowerCase()
   const filtered = problems.filter((problem) => {
     const profile = getProblemLearningProfile(problem)
     if (chapter && problem.chapter !== chapter) return false
     if (difficulty && problem.difficulty !== difficulty) return false
     if (competition && problem.competition !== competition) return false
     if (knowledgeFilter && !profile.prerequisiteIds.includes(knowledgeFilter)) return false
-    if (!keyword) return true
-    const knowledgeLabels = getKnowledgeNodes(profile.prerequisiteIds).map((node) => node.label).join(' ')
-    return `${problem.title} ${problem.statement} ${problem.tags.join(' ')} ${profile.summary} ${knowledgeLabels}`
-      .toLowerCase().includes(keyword)
+    return matchesProblemLearningQuery(problem, query)
   })
 
   return (

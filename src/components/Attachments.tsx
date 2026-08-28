@@ -21,7 +21,7 @@ export function AttachmentUploader({
   function handleFiles(files: FileList | null) {
     if (!files) return
     if (!FEATURES.attachmentUpload) {
-      setErr('MathForge 0.2 已关闭附件上传。')
+      setErr('MathForge 当前已关闭附件上传。')
       if (ref.current) ref.current.value = ''
       return
     }
@@ -52,7 +52,7 @@ export function AttachmentUploader({
   return (
     <div>
       {!FEATURES.attachmentUpload && (
-        <p className="text-xs leading-6 text-[#96938a]">附件上传在 MathForge 0.2 中关闭。</p>
+        <p className="text-xs leading-6 text-[#96938a]">附件上传在 MathForge 当前公开产品中关闭。</p>
       )}
       <input
         ref={ref}

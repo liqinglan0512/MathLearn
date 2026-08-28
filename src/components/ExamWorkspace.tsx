@@ -17,7 +17,8 @@ import {
   type ExamErrorReason,
   type ExamSession,
 } from '@/lib/exam'
-import { getLabMeta, type LabId } from '@/lib/learning'
+import { getLabMeta } from '@/lib/learning'
+import type { LabId } from '@/lib/labs'
 import { store } from '@/lib/store'
 import type { Paper } from '@/lib/types'
 
