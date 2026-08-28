@@ -15,7 +15,7 @@
     "check:latex": "node check-latex.mjs",
     "check:hygiene": "node scripts/verify-repository-hygiene.mjs",
     "check:product-policy": "vitest run tests/public-product-policy.test.ts tests/euclid-public-policy.test.ts",
-    "check:contracts": "npm run check:product-policy && node scripts/verify-baseline-doc.mjs && node scripts/verify-feature-freeze.mjs && node scripts/verify-product-direction.mjs && node scripts/verify-euclid-lazy-data.mjs && node scripts/verify-completion-docs.mjs",
+    "check:contracts": "npm run check:product-policy && node scripts/verify-baseline-doc.mjs && node scripts/verify-feature-freeze.mjs && node scripts/verify-product-direction.mjs && node scripts/verify-euclid-lazy-data.mjs && node scripts/verify-completion-docs.mjs && node scripts/verify-0-3-completion-docs.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run check:latex && npm run check:hygiene && npm run check:contracts && npm run build",
     "preview": "vite preview"
   },
