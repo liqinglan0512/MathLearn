@@ -1,5 +1,7 @@
 # MathForge 0.3.0 Release Readiness Report
 
+> **2026-09-06 post-release update:** the report below is historical evidence. Both GitHub Releases now exist; see the closeout addendum at the end. Operational maintenance remains partially blocked and is separate from the original code-release verdict.
+
 | | |
 | --- | --- |
 | 审计日期 | 2026-09-06 |
@@ -377,3 +379,30 @@ run 34019230895 | commit 975b40b | Node 22.x | completed: success
 | 同机 Leo Tree | 443 → 200，80 → 302，未受影响 |
 
 部署闭环完成，无待执行项。
+
+## 11. Post-release closeout addendum — 2026-09-06
+
+### Release and version boundaries
+
+- [v0.3.0](https://github.com/liqinglan0512/MathLearn/releases/tag/v0.3.0) exists and resolves to `b145e6f483815ef58b01d7599155dc1f04331001`.
+- [MathForge v0.3.1](https://github.com/liqinglan0512/MathLearn/releases/tag/v0.3.1) was created from the existing tag resolving to `a062ff5cbb65bcb70291fc718c7cdb8b7899c9bb`; no tag was moved. It is the latest stable release at this inspection.
+- The v0.3.1 source archives include shared-host port isolation, but **do not include** the subsequent D1/D2/D3 fixes (`4f92d47`, `424f516`, `b9957ce`). The release notes explicitly distinguish these later deployed fixes from the tagged source.
+- Initial remote main was `056ca20a583aaa68a9a9b5469bcf1d544a92963e`, with [CI success](https://github.com/liqinglan0512/MathLearn/actions/runs/34025167524). The local main was fast-forwarded from `b145e6f`; no history was rewritten.
+
+### Verification and deployment hygiene
+
+- A clean checkout of `056ca20` passed `npm ci` and `npm run check`: 16 test files, 103 tests, 569 formulas with zero errors, typecheck, lint, contracts and production build. The original working directory's lint run traversed an existing nested worktree and failed on two files in that other checkout; that failure was retained and no lint rule was weakened.
+- The Windows verification build produced `index-RAbI5OPB.js`; it was not substituted for the Linux production build. At the post-cleanup inspection production still served `index-CfIhtkcy.js`, SHA-256 `adf07205e5c6734d33570bfbb21ae8434b547d84b1afda4411758c9ec90dc9de`. Build environment and serving identity are tracked separately.
+- The stopped legacy container was inspected and exported before removal. Its former directory was archived and retired after checking nginx roots/upstreams, container mounts, listeners, systemd/cron references and open process paths. Production uses a separate static root and did not depend on these legacy resources. Private operational backups remain on the host and are not committed.
+- External checks after cleanup returned 200 for the nine documented routes plus `/principles/a3`; index and hashed JavaScript returned the required CSP, nosniff, frame and referrer headers, with exactly one correct Cache-Control value each.
+- External Chromium checks found zero console/page errors, 25 KaTeX elements and no KaTeX error elements on `/principles/a3`, and no password forms on the guarded identity routes. Keyboard interaction reduced `/viz` increment h from 1.5 to 0.02 and the displayed slope error from 0.677807 to 0.00722. At 375 px, document width remained 375 px. Leo Tree remained reachable with its expected title.
+
+### Maintenance and contribution workflow
+
+- Nine scoped issues were created and linked in `POST_RELEASE_BACKLOG.md`; each includes background, current state, goal, acceptance criteria and exclusions. Only the missing `deployment` and `security` labels were added. Issues #8 and #9 are marked `good first issue`.
+- README already describes closed site contribution/community features and the GitHub Issue/PR path; no redundant rewrite was made. The repository description is already corrected. CONTRIBUTING's stale licensing paragraph is tracked separately in #9.
+- **DOMAIN/HTTPS BLOCKED — NO APPROVED DOMAIN**: no approved MathForge domain was established. No certificate or shared 443 configuration was changed; follow-up is #1.
+- Package indexes were freshly retrieved after bypassing an unavailable proxy for that command only. Twenty packages were upgradeable. A held boot-initialization package and shared container-runtime updates need a deliberate maintenance window; no holds were overridden and no package updates were installed in this closeout.
+- **REBOOT REQUIRED** was already present for a previously installed libc update. No reboot, distribution upgrade, SSH policy change, firewall change or user-permission change was performed. Private host-hardening follow-up remains outside this public record.
+
+**POST-RELEASE CLOSEOUT PARTIAL — BLOCKED BY: approved domain/HTTPS, owner-coordinated server maintenance/reboot and host-hardening decisions.** Code development remains frozen in maintenance mode; none of the newly opened issues was implemented.

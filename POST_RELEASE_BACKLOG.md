@@ -1,5 +1,23 @@
 # MathForge Post-Release Backlog
 
+## 2026-09-06 maintenance tracking
+
+MathForge v0.3.x is in **MAINTENANCE MODE**. The issues below track verified follow-up work; creating them does not authorize implementation. The historical observations below remain point-in-time records.
+
+| Issue | Scope |
+| --- | --- |
+| [#1](https://github.com/liqinglan0512/MathLearn/issues/1) | Approved domain and isolated HTTPS deployment |
+| [#2](https://github.com/liqinglan0512/MathLearn/issues/2) | Deployment, identity verification and rollback runbook |
+| [#3](https://github.com/liqinglan0512/MathLearn/issues/3) | External production smoke automation |
+| [#4](https://github.com/liqinglan0512/MathLearn/issues/4) | Isolated deployment guard and nginx regression coverage |
+| [#5](https://github.com/liqinglan0512/MathLearn/issues/5) | Development dependency advisory triage |
+| [#6](https://github.com/liqinglan0512/MathLearn/issues/6) | Measured first-load performance baseline |
+| [#7](https://github.com/liqinglan0512/MathLearn/issues/7) | Evidence-based unused dependency audit |
+| [#8](https://github.com/liqinglan0512/MathLearn/issues/8) | Explicit Tools KaTeX trust policy |
+| [#9](https://github.com/liqinglan0512/MathLearn/issues/9) | Contributor licensing guidance consistency |
+
+B4b has been rechecked against the live GitHub API: the repository description now matches the frozen product scope, so no duplicate issue was opened. README and CONTRIBUTING already document the Issue/PR workflow. No specific unresolved responsive or accessibility defect was established, so none was invented. `/papers` navigation and Euclid re-publication remain product decisions rather than implementation tasks.
+
 本文件只记录**以后可能考虑**的事项。其中没有任何一项在本轮实现，也没有任何一项构成 0.3.0 的发布阻塞。
 
 写在这里不等于已经批准。每一项在动工前都需要单独的产品决策。
