@@ -224,11 +224,14 @@ AssertionError: repository cleanup must retain exactly the 14 required Markdown 
 
 判定依据：6 个 Gate 全部 PASS；P0 清零（1 项，已修复并验证）；P1 清零（3 项，全部已修复并验证）；P2/P3 已分类记录且不构成阻塞；所有修复后完整重跑质量门与 runtime smoke test 均通过。
 
-**该裁决覆盖代码与仓库交付。它不覆盖以下三项**，每一项都需要所有者操作，且都不是代码缺陷：
+仓库已转为 Public，远程 CI 在 Node 22 上 **PASS**（第 9 节），代码层发布条件全部满足并已验证。
 
-1. **仓库仍为 Private** —— 代码已达公开发布标准，但「公开」这一步尚未发生（第 9 节）；
-2. **远程 CI 结果未验证** —— 本环境无法观察；若 CI FAIL，裁决应改为 NOT READY（第 9 节）；
-3. **服务器部署安全** —— 弱口令加固必须先于部署完成（第 7 节末尾）。
+**该裁决覆盖代码与仓库交付。以下两项仍需所有者操作**，均不是代码缺陷：
+
+1. **GitHub 仓库描述仍在宣传已关闭的功能**（P1-4，第 9 节）—— 属 GitHub 仓库设置，不在代码仓库内，本环境无权修改。这是当前唯一未清零的 P1；
+2. **GitHub Release 未创建** —— tag `v0.3.0` 已在远程，Release 需手动创建。
+
+服务器部署安全（第 7 节末尾）由所有者自行判断风险等级后决定。
 
 ### 发布步骤
 
@@ -246,35 +249,54 @@ AssertionError: repository cleanup must retain exactly the 14 required Markdown 
 
 | 项 | 值 |
 | --- | --- |
-| Repository | `liqinglan0512/MathLearn` |
+| Repository | `liqinglan0512/MathLearn`（**Public**）|
 | Branch | `main` |
 | Commit | `b145e6f483815ef58b01d7599155dc1f04331001` |
 | Push Result | **成功**，`cc2eeba..b145e6f`，fast-forward，未使用 force |
-| CI Result | **UNVERIFIED**（见下） |
+| CI Result | **PASS** —— run `34019230895`，commit `975b40b`，Node 22.x，11/11 step 全绿 |
 | Tag | `v0.3.0` → `b145e6f`，已推送 |
-| GitHub Release | **未创建**，需所有者操作（见下） |
-| Final Remote State | `PUSHED — READY FOR PUBLIC RELEASE（代码层），但仓库当前为 Private，尚未真正公开` |
+| GitHub Release | **未创建** —— 本环境无认证 API 访问，需所有者操作 |
+| Final Remote State | `PUSHED — READY FOR PUBLIC RELEASE` |
 
 推送前完成的检查：`git status`（干净）、branch、remote、`git diff`、`git diff --staged`、提交历史、未跟踪敏感文件（无）、`.env` / API key / token / credential 扫描（无）、大型缓存与构建产物（`node_modules`、`dist` 均被 `.gitignore` 正确排除，无 >100KB 未跟踪文件）。
 
 推送后确认：`git fetch` 后本地 HEAD 与 `origin/main` **哈希完全一致**；远程 tag `v0.3.0` 指向同一 commit。
 
-### 两项无法在本环境验证 / 需所有者操作的事项
+### 验证结果（仓库转为 Public 后复查）
 
-**1. 仓库当前是 Private —— 「公开发布」尚未真正发生**
+**1. 仓库已 Public** —— `private: false`，README 匿名可见（HTTP 200），GitHub 识别 License 为 `MIT`，tag `v0.3.0` 可见。此前记录的「尚未真正公开」已解除。
 
-`https://api.github.com/repos/liqinglan0512/MathLearn` 与 `https://github.com/liqinglan0512/MathLearn` 对匿名请求均返回 **HTTP 404**，说明仓库处于私有状态（push 之所以成功，是走了本机凭据管理器）。
+**2. CI 已验证 PASS** —— 此前因仓库私有 + 无认证访问而无法观察，现已确认：
 
-因此：陌生开发者目前看不到 README，也无法 clone；`v0.3.0` 是一个私有仓库里的 tag。**把仓库改为 Public 是所有者的决定，不应由自动化流程代劳**，本轮未做也无权做。代码本身已满足公开发布标准，但「公开」这一步尚未发生。
+```
+run 34019230895 | commit 975b40b | Node 22.x | completed: success
+  PASS Install dependencies   PASS Typecheck   PASS Lint   PASS Test
+  PASS Validate mathematical markup
+  PASS Validate repository hygiene
+  PASS Validate MathForge contracts and lazy Euclid data
+  PASS Build
+```
 
-**2. CI 结果未验证**
+这同时补上了本地验证的最后一处缺口：本机为 Node 24，CI 在 **Node 22** 上跑通了完全相同的序列，之前记录的 Node 版本差异不再是未覆盖项。
 
-本环境没有可用且已认证的 GitHub CLI / API 访问，仓库又是私有，因此**无法观察到 `push` 触发的 workflow 结果**。本报告不把本地通过写成 CI 通过。
+**3. GitHub Release 未创建** —— 本环境没有认证的 GitHub API 访问（无 `gh`、无 token），无法创建。tag `v0.3.0` 已在远程，Release 需所有者基于该 tag 手动创建。
 
-已做的等价验证：在删除 `node_modules` 后以 `npm ci` 重建，并按 `.github/workflows/ci.yml` 完全相同的顺序执行 typecheck → lint → test → check:latex → check:hygiene → check:contracts → build，`CHECK_EXIT=0`。
+### 新发现：P1-4 —— GitHub 仓库描述与冻结的产品决策矛盾
 
-**残留差异**：本机为 Node `v24.16.0`，CI 为 Node `22.x`。本环境无第二个 Node 版本，该差异未被覆盖。
+仓库转为 Public 后才可见，属本轮审计范围内的 **repository description** 一项。
 
-所有者应在此确认 CI：`https://github.com/liqinglan0512/MathLearn/actions`
+当前描述：
 
-若该 CI run 为 FAIL，则按既定规则，最终状态应由 `READY` 改为 `NOT READY`，并且 `v0.3.0` 不应被用于正式发布。
+> 面向中国大学生数学竞赛备赛者的极简数学学习平台：题库共享 + 社区解法 + 第一性原理推导 + 交互可视化（React + TS + Vite + Tailwind + shadcn/ui）
+
+- *问题*：它承诺了两项**已被明确关闭**的能力——「题库共享」依赖 `publicContribution`（现为 `false`），「社区解法」依赖 `social` 与 `publicContribution`（均为 `false`）。同时受众被写窄为「中国大学生数学竞赛备赛者」，与实际定位（高中生、本科生、研究生与数学爱好者）不符。
+- *为什么是 P1*：这是访客在 GitHub 上读到的第一行字，位置比 README 更靠前。它正属于「看起来可以用但实际上没有」的误导性表述，与 README、feature flag 和策略测试直接冲突。
+- *状态*：**未修复。** 仓库描述属 GitHub 侧仓库设置，不在代码仓库内；本环境无认证 API 访问，且修改仓库设置需所有者明确授权。
+
+建议替换为：
+
+```
+开源数学学习平台：从定义、结构与第一性原理理解数学。理解 → 可视化 → 练习 → 开源贡献。面向高中生、本科生、研究生与数学爱好者。站内投稿与社区功能关闭，贡献通过 GitHub Issue / PR。React + TypeScript + Vite。
+```
+
+在描述更正前，GitHub 仓库首屏仍在对外传达与产品实际状态不一致的说明。
