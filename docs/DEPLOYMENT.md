@@ -37,6 +37,36 @@ apt-get install -y fail2ban && systemctl enable --now fail2ban
 
 另外：**任何贴到聊天记录、issue、工单或截图里的密码都应视为已泄露**，必须更换。
 
+## 0.5 这台服务器是共享的 —— 部署前必读
+
+目标服务器上**已经在跑另一个应用**。2026-09-06 从外部探测确认：
+
+| 端口 | 内容 | nginx |
+| --- | --- | --- |
+| 80 | 302 跳转到 443 | 1.18.0 (Ubuntu) |
+| 443 | **Leo Tree**（Let's Encrypt 证书） | 1.18.0 (Ubuntu) |
+| 8090 | MathForge（0.2 构建） | 1.21.5 —— 版本不同，很可能是独立实例或容器 |
+
+因此 **MathForge 必须使用自己的端口，默认 8090，绝不能占用 80 / 443**。
+
+`deploy/deploy.sh` 内建了以下保护：
+
+- 端口写死校验：`MATHFORGE_PORT` 为 80 或 443 时直接拒绝执行；
+- 生成的 nginx 配置若含 `listen 80/443` 则中止（正则同时覆盖 `[::]:80` 与 `443 ssl`）；
+- 从不使用 `default_server`；
+- **从不删除 `sites-enabled/default` 或任何它没创建的站点配置**；
+- 部署前探测目标端口：若上面跑的不是 MathForge，直接中止，除非显式设置 `ALLOW_PORT_TAKEOVER=1`；
+- `nginx -t` 失败时移除自己的软链并**不 reload**，保证其他站点不受影响；
+- 部署前后比对 `sites-enabled/` 清单并报告是否有变化。
+
+> 8090 上的 nginx 是 1.21.5，而系统 nginx 是 1.18.0。这说明 8090 很可能由**另一个 nginx 实例或 Docker 容器**提供服务。如果那个容器占着 8090，系统 nginx 无法绑定该端口，脚本会在 `nginx -t` 处中止而不会破坏现有服务。此时请改用一个空闲端口：
+>
+> ```bash
+> MATHFORGE_PORT=8091 bash deploy.sh
+> ```
+>
+> 或者先停掉旧的 MathForge 容器，再让系统 nginx 接管 8090。
+
 ## 1. 一键部署
 
 在服务器上以 root 执行：
@@ -51,26 +81,34 @@ curl -fsSL https://raw.githubusercontent.com/liqinglan0512/MathLearn/main/deploy
 git clone --depth 1 https://github.com/liqinglan0512/MathLearn.git /opt/mathforge && bash /opt/mathforge/deploy/deploy.sh
 ```
 
-脚本会：安装 Node.js 22 与 nginx → 拉取源码 → `npm ci` → `npm run build` → 原子发布到 `/var/www/mathforge` → 写入 nginx 配置 → `nginx -t` → reload → 自检首页与深链接。
+默认部署到 **8090**。想换端口：
+
+```bash
+MATHFORGE_PORT=8091 bash deploy.sh
+```
+
+脚本会：探测目标端口占用 → 安装 Node.js 22 与 nginx → 拉取源码 → `npm ci` → `npm run build` → 原子发布到 `/var/www/mathforge` → 写入仅监听 `MATHFORGE_PORT` 的 nginx 配置 → `nginx -t` → reload → 自检首页与深链接 → 比对其他站点未被改动。
 
 脚本是幂等的，再跑一次就是重新部署当前 `main`。构建失败时不会覆盖线上目录。
 
 可用环境变量覆盖默认值：
 
 ```bash
-BRANCH=main WEB_ROOT=/var/www/mathforge bash deploy.sh
+BRANCH=main MATHFORGE_PORT=8090 WEB_ROOT=/var/www/mathforge bash deploy.sh
 ```
 
 ## 2. 启用 HTTPS
 
-DNS 指向服务器之后：
+> **注意**：443 上已经是 Leo Tree。不要直接对 MathForge 站点跑 `certbot --nginx`，否则可能改动到别人的 server block。
+
+正确做法是给 MathForge 分配独立域名（例如 `mathforge.example.com`），DNS 指向本机后，为该域名新建一个 **443 server block**（`server_name` 写具体域名，不要用 `_`），反向代理到本地 `127.0.0.1:8090`，再对该域名签发证书：
 
 ```bash
 apt-get install -y certbot python3-certbot-nginx
-certbot --nginx -d your-domain.com
+certbot --nginx -d mathforge.example.com
 ```
 
-certbot 会自动改写 `/etc/nginx/sites-available/mathforge` 并配置续期。
+因为两个站点用 `server_name` 区分，Leo Tree 的现有 443 配置不受影响。
 
 > 在只有 IP、没有域名时无法签发证书。此时站点只能以 HTTP 提供。MathForge 不收集账号、不提交表单、不发起第三方请求，因此 HTTP 下没有凭据泄露面；但仍建议尽快接域名并启用 TLS。
 

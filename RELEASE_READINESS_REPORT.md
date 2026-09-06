@@ -139,6 +139,23 @@ CI 结果见本文末尾「GitHub Delivery」节 —— 本地 gate 通过不能
 - *修复*：`npm uninstall recharts`。生产依赖告警从 1 high 降到 **0**。
 - *验证*：`npm audit --omit=dev` → `found 0 vulnerabilities`；完整 `npm run check` 重跑通过。
 
+
+### 新发现：P0-2 —— 部署脚本会破坏同机上的另一个生产站点（已修复，部署前发现）
+
+在执行部署前对目标主机做只读探测（无凭据，仅 HTTP）时发现：
+
+| 端口 | 内容 | nginx |
+| --- | --- | --- |
+| 80 | 302 → 443 | 1.18.0 |
+| 443 | **Leo Tree** | 1.18.0 |
+| 8090 | MathForge 0.2 | 1.21.5 |
+
+- *问题*：原 `deploy/deploy.sh` 在端口 **80** 上写入 `server_name _` 的 server block，并执行 `rm -f /etc/nginx/sites-enabled/default`，随后 reload nginx。在这台主机上运行，极可能**劫持 Leo Tree 的 80 端口流量并删除其依赖的站点配置**，直接影响一个正在运行的生产站点。
+- *根因*：脚本是在假设「独占主机」的前提下写的。审计范围此前只覆盖仓库与应用，没有覆盖目标主机的既有占用情况。这属于发布后必然造成严重后果的问题，定级 P0。
+- *修复*：脚本改为端口隔离并加了多层保护——默认端口 8090；`MATHFORGE_PORT` 为 80/443 时直接拒绝；生成的配置若含 `listen 80/443` 则中止；不再使用 `default_server`；**不再删除 `sites-enabled/default` 或任何非自己创建的站点**；部署前探测目标端口，若非 MathForge 则中止（需 `ALLOW_PORT_TAKEOVER=1` 才继续）；`nginx -t` 失败时撤销自己的软链且不 reload；部署前后比对 `sites-enabled/` 清单。
+- *验证*：`bash -n` 语法通过；端口守卫做了正反用例测试——`listen 80;`、`listen [::]:80;`、`listen 443 ssl;` 均被拦截，`listen 8090;`、`listen [::]:8090;`、`listen 8080;` 正常放行（确认不会把 8080 误判为 80）；模板渲染后确认只监听 8090。
+- *说明*：该问题在**任何部署动作发生之前**被发现，服务器未被改动，Leo Tree 未受影响。
+
 ### 新增的回归测试
 
 `tests/public-product-policy.test.ts` 新增 3 项（原 9 → 12）：
