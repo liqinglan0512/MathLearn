@@ -97,15 +97,30 @@ if command -v docker >/dev/null 2>&1; then
     fi
 fi
 
-# Refuse if anything else already holds the port at the socket level.
+# Refuse if a FOREIGN process already holds the port at the socket level.
+#
+# The system nginx holding this port is the normal case for a redeploy: it is
+# this script's own site, and the reload below rebinds it. Only a non-nginx
+# listener means the port is genuinely owned by something else. (A Docker
+# container publishing the port is caught by the check above, which is the
+# case that actually broke a deploy: the container owned the socket while the
+# system nginx silently failed to bind.)
 if command -v ss >/dev/null 2>&1; then
-    if ss -lnt "sport = :${MATHFORGE_PORT}" 2>/dev/null | grep -q LISTEN; then
-        if [ "$ALLOW_PORT_TAKEOVER" != "1" ]; then
-            printf '    something is already listening on %s:
+    listeners="$(ss -lntp "sport = :${MATHFORGE_PORT}" 2>/dev/null | grep LISTEN || true)"
+    if [ -n "$listeners" ]; then
+        if printf '%s' "$listeners" | grep -q '"nginx"'; then
+            printf '    port %s is held by the system nginx; this deploy reloads it in place
 ' "$MATHFORGE_PORT"
-            ss -lntp "sport = :${MATHFORGE_PORT}" 2>/dev/null | sed 's/^/      /'
-            die "port ${MATHFORGE_PORT} is already bound. The system nginx cannot take it.
-       Use a free port (MATHFORGE_PORT=8091) or stop the current listener first."
+        elif [ "$ALLOW_PORT_TAKEOVER" != "1" ]; then
+            printf '    a non-nginx process is listening on %s:
+' "$MATHFORGE_PORT"
+            printf '%s
+' "$listeners" | sed 's/^/      /'
+            die "port ${MATHFORGE_PORT} is bound by a process that is not the system nginx,
+       so nginx cannot take it and this deploy would not become live.
+       Use a free port (MATHFORGE_PORT=8091) or stop that listener first."
+        else
+            warn "ALLOW_PORT_TAKEOVER=1 set; continuing despite a foreign listener on ${MATHFORGE_PORT}"
         fi
     fi
 fi
