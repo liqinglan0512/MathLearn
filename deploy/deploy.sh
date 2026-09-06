@@ -78,10 +78,35 @@ fi
 # Report neighbours we must not disturb.
 if command -v docker >/dev/null 2>&1; then
     if docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | grep -q ":${MATHFORGE_PORT}->"; then
-        warn "a Docker container publishes port ${MATHFORGE_PORT}:"
-        docker ps --format '    {{.Names}}  {{.Image}}  {{.Ports}}' 2>/dev/null | grep ":${MATHFORGE_PORT}->" || true
-        warn "this script configures the SYSTEM nginx. If that container owns the port,"
-        warn "the system nginx cannot bind it and this deploy will abort at nginx -t."
+        printf '    a Docker container already publishes port %s:
+' "$MATHFORGE_PORT"
+        docker ps --format '      {{.Names}}  {{.Image}}  {{.Ports}}' 2>/dev/null | grep ":${MATHFORGE_PORT}->" || true
+        if [ "$ALLOW_PORT_TAKEOVER" != "1" ]; then
+            die "that container owns port ${MATHFORGE_PORT}, so the system nginx cannot bind it.
+       Deploying anyway would leave the OLD container serving the port while this
+       script reported success. Aborting instead.
+
+       Either serve MathForge on a free port:
+           MATHFORGE_PORT=8091 bash deploy.sh
+
+       or retire the container first and let the system nginx own ${MATHFORGE_PORT}:
+           docker stop <name> && docker rm <name>
+           bash deploy.sh"
+        fi
+        warn "ALLOW_PORT_TAKEOVER=1 set; continuing, but the container will likely keep the port"
+    fi
+fi
+
+# Refuse if anything else already holds the port at the socket level.
+if command -v ss >/dev/null 2>&1; then
+    if ss -lnt "sport = :${MATHFORGE_PORT}" 2>/dev/null | grep -q LISTEN; then
+        if [ "$ALLOW_PORT_TAKEOVER" != "1" ]; then
+            printf '    something is already listening on %s:
+' "$MATHFORGE_PORT"
+            ss -lntp "sport = :${MATHFORGE_PORT}" 2>/dev/null | sed 's/^/      /'
+            die "port ${MATHFORGE_PORT} is already bound. The system nginx cannot take it.
+       Use a free port (MATHFORGE_PORT=8091) or stop the current listener first."
+        fi
     fi
 fi
 
@@ -193,8 +218,31 @@ code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${MATHFORGE_POR
 deep="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${MATHFORGE_PORT}/principles")"
 [ "$deep" = "200" ] || die "SPA fallback broken: /principles returned HTTP $deep"
 
-curl -s "http://127.0.0.1:${MATHFORGE_PORT}/" | grep -q '<div id="root">' || die "index.html missing app root"
-curl -s "http://127.0.0.1:${MATHFORGE_PORT}/" | grep -q 'MathForge' || die "served page is not MathForge"
+served="$(curl -s "http://127.0.0.1:${MATHFORGE_PORT}/")"
+printf '%s' "$served" | grep -q '<div id="root">' || die "index.html missing app root"
+
+# Identity check. 'the page mentions MathForge' is NOT enough: an older
+# MathForge build, or a container still holding the port, satisfies that and
+# would make this script report a success that never happened. Compare the
+# content-hashed entry bundle instead.
+expected_asset="$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' "$WEB_ROOT/index.html" | head -1)"
+[ -n "$expected_asset" ] || die "could not determine the entry bundle from $WEB_ROOT/index.html"
+
+served_asset="$(printf '%s' "$served" | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1)"
+
+if [ "$served_asset" != "$expected_asset" ]; then
+    die "port ${MATHFORGE_PORT} is NOT serving the build that was just published.
+       published : $expected_asset
+       served    : ${served_asset:-<none found>}
+       Something else still owns this port (commonly a Docker container).
+       Nothing was rolled back: $WEB_ROOT holds the new build, it is simply not
+       the thing answering on ${MATHFORGE_PORT}.
+       Check with:  ss -lntp 'sport = :${MATHFORGE_PORT}'
+                    docker ps --filter publish=${MATHFORGE_PORT}"
+fi
+
+printf '    serving %s (matches the build just published)
+' "$served_asset"
 
 # Confirm the neighbouring sites are still there.
 sites_after="$(ls -1 /etc/nginx/sites-enabled/ 2>/dev/null | grep -v "^${SITE_NAME}$" | sort || true)"
