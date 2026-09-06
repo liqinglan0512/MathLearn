@@ -358,6 +358,22 @@ run 34019230895 | commit 975b40b | Node 22.x | completed: success
 | 移动端 375×812 | `scrollWidth == clientWidth == 375`，无横向溢出 |
 | **同机 Leo Tree** | 443 → 200，80 → 302，**未受影响** |
 
-### 待执行
+**D3 —— 端口预检误伤自身重新部署（已修复）**
 
-安全头修复（commit `424f516`）尚未部署到线上。需在服务器重跑一次 `deploy.sh`。在此之前，站点功能完全正常，但缺少上述四个安全响应头。
+修 D1 时加的 socket 级守卫对「任何监听者」都中止，导致每次重新部署都失败：8090 本来就该被系统 nginx 占着，reload 会重新绑定。守卫改为区分监听进程——系统 nginx 持有端口视为正常原地升级并放行，非 nginx 监听者仍然中止（当初出事的场景里宿主机进程是 `docker-proxy` 而非 `nginx`，仍会被拦下）。两种真实监听行都做了分类测试。
+
+### 最终线上状态（已复验）
+
+部署 commit `b9957ce`，构建 `index-CfIhtkcy.js`。以下为**外部实测**结果，不采信脚本自检：
+
+| 项 | 结果 |
+| --- | --- |
+| 四个安全响应头（`/` 与哈希资源） | **全部present**：CSP、X-Content-Type-Options、X-Frame-Options、Referrer-Policy |
+| `Cache-Control` 重复问题 | 已消除，两处均为 1 个 |
+| `/assets/` 缓存 | `public, max-age=31536000, immutable` |
+| `/` 缓存 | `no-cache, must-revalidate` |
+| 全部 9 条路由 | 200 |
+| 严格 CSP 下的运行时 | **0 console error**，KaTeX 渲染正常，`/viz` 交互实验实时计算正常 |
+| 同机 Leo Tree | 443 → 200，80 → 302，未受影响 |
+
+部署闭环完成，无待执行项。
