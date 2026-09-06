@@ -188,6 +188,11 @@ find "$WEB_ROOT" -type f -exec chmod 644 {} +
 
 # --- 6. nginx site ----------------------------------------------------------
 log "Configuring nginx site '$SITE_NAME' on port $MATHFORGE_PORT"
+
+# Security headers live in a snippet because nginx drops inherited add_header
+# directives in any location that sets one of its own.
+mkdir -p /etc/nginx/snippets
+cp "$SRC_DIR/deploy/nginx-security-headers.conf" /etc/nginx/snippets/mathforge-headers.conf
 sed -e "s|__MATHFORGE_PORT__|${MATHFORGE_PORT}|g" \
     -e "s|__MATHFORGE_ROOT__|${WEB_ROOT}|g" \
     "$SRC_DIR/deploy/nginx-mathforge.conf" > "/etc/nginx/sites-available/$SITE_NAME"
@@ -243,6 +248,35 @@ fi
 
 printf '    serving %s (matches the build just published)
 ' "$served_asset"
+
+# Assert the security headers actually reach the client. Declaring them in the
+# server block is not enough: nginx silently drops inherited add_header
+# directives inside any location that sets its own, which previously left the
+# deployed site serving none of them.
+log "Checking security headers"
+header_failures=0
+for probe in "/" "/${expected_asset}"; do
+    probe_headers="$(curl -s -m 10 -D - -o /dev/null "http://127.0.0.1:${MATHFORGE_PORT}${probe}")"
+    for header in "X-Content-Type-Options" "X-Frame-Options" "Referrer-Policy" "Content-Security-Policy"; do
+        if ! printf '%s' "$probe_headers" | grep -qi "^${header}:"; then
+            warn "missing ${header} on ${probe}"
+            header_failures=$((header_failures + 1))
+        fi
+    done
+    duplicate_cc="$(printf '%s' "$probe_headers" | grep -ci '^Cache-Control:' || true)"
+    if [ "$duplicate_cc" -gt 1 ]; then
+        warn "${probe} returns ${duplicate_cc} Cache-Control headers; they compete"
+        header_failures=$((header_failures + 1))
+    fi
+done
+
+[ "$header_failures" -eq 0 ] || die "$header_failures security-header problem(s) above.
+       The site IS serving the new build, but not with the intended headers.
+       Check that /etc/nginx/snippets/mathforge-headers.conf is included by every
+       location in /etc/nginx/sites-available/${SITE_NAME} that sets add_header."
+
+printf '    security headers present on / and on the hashed asset
+'
 
 # Confirm the neighbouring sites are still there.
 sites_after="$(ls -1 /etc/nginx/sites-enabled/ 2>/dev/null | grep -v "^${SITE_NAME}$" | sort || true)"
