@@ -95,3 +95,46 @@ describe('MathForge 0.3 public product policy', () => {
     expect(`${login}\n${register}`).toMatch(/真实密码/)
   })
 })
+
+describe('local identity prototype containment', () => {
+  it('keeps the identity prototype out of production builds', () => {
+    // import.meta.env.DEV is false in a production build, so the public site
+    // must ship without any account system at all.
+    expect(FEATURES.localIdentityPrototype).toBe(Boolean(import.meta.env?.DEV))
+  })
+
+  it('gates /login and /register behind the identity prototype flag', async () => {
+    const app = await readSource('src/App.tsx')
+
+    for (const path of ['/login', '/register']) {
+      const route = new RegExp(`<Route path="${path}"[^\n]*`).exec(app)?.[0] ?? ''
+      expect(route, `${path} route missing`).not.toBe('')
+      expect(route, `${path} must be gated by FEATURES.localIdentityPrototype`).toContain(
+        'enabled={FEATURES.localIdentityPrototype}',
+      )
+    }
+  })
+
+  it('never routes to /login from a surface that is public in production', async () => {
+    // Any component that navigates to /login must itself be behind a flag that
+    // is disabled in production, otherwise visitors reach a password form that
+    // writes credentials to localStorage.
+    const publicSurfaces = ['src/components/Layout.tsx', 'src/pages/Papers.tsx', 'src/pages/Problems.tsx']
+
+    for (const relativePath of publicSurfaces) {
+      const source = await readSource(relativePath)
+      const loginLines = source
+        .split('\n')
+        .map((line, index) => ({ line, number: index + 1 }))
+        .filter(({ line }) => line.includes("'/login'") || line.includes('to="/login"'))
+
+      for (const { number } of loginLines) {
+        const preceding = source.split('\n').slice(Math.max(0, number - 8), number).join('\n')
+        expect(
+          /FEATURES\.(localIdentityPrototype|publicContribution|localDiscussionPrototype)/.test(preceding),
+          `${relativePath}:${number} navigates to /login without a production-disabled flag guard`,
+        ).toBe(true)
+      }
+    }
+  })
+})

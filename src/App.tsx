@@ -39,8 +39,8 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<FeatureRoute enabled={FEATURES.localIdentityPrototype} title="本地身份原型未启用" description="MathForge 公开版本没有账户系统。学习标记只保存在当前浏览器，不需要也不会创建任何账号；请不要在此站点输入真实密码。"><Login /></FeatureRoute>} />
+            <Route path="/register" element={<FeatureRoute enabled={FEATURES.localIdentityPrototype} title="本地身份原型未启用" description="MathForge 公开版本没有账户系统。学习标记只保存在当前浏览器，不需要也不会创建任何账号；请不要在此站点输入真实密码。"><Register /></FeatureRoute>} />
             <Route path="/problems" element={<Problems />} />
             <Route path="/problems/new" element={<FeatureRoute enabled={FEATURES.publicContribution}><NewProblem /></FeatureRoute>} />
             <Route path="/problems/:id" element={<ProblemDetail />} />
