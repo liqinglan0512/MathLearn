@@ -1,0 +1,67 @@
+MathForge Content License
+=========================
+
+The MathForge *software* is licensed under the MIT License; see `LICENSE`.
+
+The MathForge *learning content* is licensed under the
+Creative Commons Attribution-ShareAlike 4.0 International License
+(CC BY-SA 4.0).
+
+    Copyright (c) 2026 MathForge contributors
+    SPDX-License-Identifier: CC-BY-SA-4.0
+
+Full legal text:  https://creativecommons.org/licenses/by-sa/4.0/legalcode
+Human-readable summary: https://creativecommons.org/licenses/by-sa/4.0/
+
+
+What "content" means here
+-------------------------
+
+CC BY-SA 4.0 applies to the mathematical and editorial prose in this
+repository, including:
+
+  - the article, principle and problem text bundled in `src/lib/seed.ts`
+  - learning-unit metadata and descriptions in `src/lib/learning-units.ts`
+  - the concept-laboratory explanatory copy under `src/components/labs/`
+  - the prose documentation under `docs/`
+
+Everything else — TypeScript, React components, build scripts, configuration
+and test code — is MIT-licensed software, even when it happens to contain a
+short descriptive string.
+
+Where a single file mixes both (for example a component whose JSX contains
+substantial explanatory prose), the code is MIT and the prose is CC BY-SA 4.0.
+
+
+Attribution
+-----------
+
+When reusing MathForge content, credit it as:
+
+    "MathForge" (https://github.com/liqinglan0512/MathLearn),
+    by MathForge contributors, licensed under CC BY-SA 4.0.
+
+Indicate whether you modified it, and license your adaptation under
+CC BY-SA 4.0 as well.
+
+
+Third-party content
+-------------------
+
+This repository redistributes and derives from third-party sources that carry
+their own terms. These are NOT covered by the licences above, and their own
+licences continue to apply:
+
+  - `src/lib/euclid-data.json` and `src/lib/euclid-modern-zh.json` contain text
+    derived from the Perseus Digital Library edition of Euclid's *Elements*
+    (`tlg1799.tlg001.perseus-eng2`), released by Perseus under
+    CC BY-SA 4.0. See `scripts/EUCLID_SOURCES.md` for the exact provenance,
+    retrieval method and derivation steps.
+
+  - Runtime and build dependencies keep the licences declared in their own
+    packages; see `package.json` and `package-lock.json`. Notably KaTeX (MIT),
+    React (MIT), Radix UI (MIT) and Tailwind CSS (MIT).
+
+The Euclid corpus is archived rather than published in the 0.3 product; see
+`README.md`. Its machine-generated modern-Chinese renderings remain marked
+`raw_machine` and have not been through independent mathematical review.

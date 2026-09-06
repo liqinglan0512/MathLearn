@@ -46,7 +46,18 @@ MathForge 0.2 的《几何原本》试验验证了 Revision、SemanticBlock、�
 
 数学证明不能仅因为 LLM 判断正确就合并，也不接受未经核验的 AI 批量内容。PR 合并不自动等于 `math_reviewed`，也不自动成为正式学习单元。
 
-> **许可证边界**：仓库目前尚未包含 `LICENSE`。软件代码许可证、数学内容许可证与历史语料的再分发边界需要 Leo 决策。在许可证确定前，“open-source”是产品目标与协作方向；公开源码不等于已经授予完整的开源许可。
+## 许可证
+
+MathForge 采用代码与内容分开授权：
+
+| 范围 | 许可证 |
+| --- | --- |
+| 软件代码（TypeScript、React 组件、构建脚本、配置、测试） | [MIT](./LICENSE) |
+| 学习内容（数学与编辑正文、学习单元描述、`docs/` 说明文档） | [CC BY-SA 4.0](./LICENSE-CONTENT) |
+
+第三方语料保留各自条款：`src/lib/euclid-data.json` 与 `src/lib/euclid-modern-zh.json` 派生自 Perseus Digital Library 的《几何原本》版本（CC BY-SA 4.0），来源与派生步骤记录在 [`scripts/EUCLID_SOURCES.md`](./scripts/EUCLID_SOURCES.md)。依赖包沿用各自声明的许可证。
+
+完整边界说明见 [`LICENSE-CONTENT`](./LICENSE-CONTENT)。
 
 ## 技术栈
 

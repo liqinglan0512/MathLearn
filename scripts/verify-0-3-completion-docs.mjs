@@ -72,7 +72,23 @@ await Promise.all([
 ])
 
 const markdownFiles = await findFiles(root, (name) => name.endsWith('.md'), new Set(['.git', 'dist', 'node_modules']))
-assert.equal(markdownFiles.length, 14, 'repository cleanup must retain exactly the 14 required Markdown documents')
+
+// The 0.3 cleanup round pinned this at 14 to stop stray Markdown creeping back
+// in. The 0.3.0 public release round adds exactly three required release
+// documents, so the budget is now 17. A bare count cannot tell a deliberate
+// release document from clutter, so the three additions are asserted by name.
+const RELEASE_DOCUMENTS = ['RELEASE_READINESS_REPORT.md', 'POST_RELEASE_BACKLOG.md', 'DEPLOYMENT.md']
+const markdownNames = markdownFiles.map((file) => decodeURIComponent(file.pathname).split('/').pop())
+
+for (const document of RELEASE_DOCUMENTS) {
+  assert.ok(markdownNames.includes(document), `release document ${document} must exist`)
+}
+
+assert.equal(
+  markdownFiles.length,
+  17,
+  'repository must retain exactly the 14 cleanup-era Markdown documents plus the 3 release documents',
+)
 
 const uiFiles = await findFiles(new URL('src/components/ui/', root), (name) => name.endsWith('.tsx'))
 assert.equal(uiFiles.length, 8, 'only the eight referenced UI wrappers should remain')
@@ -99,4 +115,10 @@ assert.match(contribution, /What[\s\S]*Why[\s\S]*How verified/)
 assert.match(direction, /Understand[\s\S]*Visualize[\s\S]*Practice[\s\S]*Contribute/)
 assert.match(security, /没有升级依赖/)
 
-console.log('MATHFORGE_0_3_COMPLETION_PASS documents=5 markdown=14 ui=8 tests=100 formulas=569 cleanup=verified release=local_only')
+// Report what was actually measured. A hard-coded summary line can keep
+// printing reassuring numbers long after the repository has moved on, which is
+// worse than printing nothing.
+console.log(
+  `MATHFORGE_0_3_COMPLETION_PASS markdown=${markdownFiles.length} ui=${uiFiles.length} ` +
+    `testFiles=${testFiles.length} releaseDocs=${RELEASE_DOCUMENTS.length} cleanup=verified`,
+)
