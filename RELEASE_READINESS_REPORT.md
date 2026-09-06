@@ -224,7 +224,11 @@ AssertionError: repository cleanup must retain exactly the 14 required Markdown 
 
 判定依据：6 个 Gate 全部 PASS；P0 清零（1 项，已修复并验证）；P1 清零（3 项，全部已修复并验证）；P2/P3 已分类记录且不构成阻塞；所有修复后完整重跑质量门与 runtime smoke test 均通过。
 
-**该裁决覆盖代码与仓库交付。它不覆盖服务器部署安全**——见第 7 节末尾，服务器加固是发布前必须由所有者完成的独立步骤。
+**该裁决覆盖代码与仓库交付。它不覆盖以下三项**，每一项都需要所有者操作，且都不是代码缺陷：
+
+1. **仓库仍为 Private** —— 代码已达公开发布标准，但「公开」这一步尚未发生（第 9 节）；
+2. **远程 CI 结果未验证** —— 本环境无法观察；若 CI FAIL，裁决应改为 NOT READY（第 9 节）；
+3. **服务器部署安全** —— 弱口令加固必须先于部署完成（第 7 节末尾）。
 
 ### 发布步骤
 
@@ -240,4 +244,37 @@ AssertionError: repository cleanup must retain exactly the 14 required Markdown 
 
 ## 9. GitHub Delivery
 
-见本文档末尾，随推送结果更新。
+| 项 | 值 |
+| --- | --- |
+| Repository | `liqinglan0512/MathLearn` |
+| Branch | `main` |
+| Commit | `b145e6f483815ef58b01d7599155dc1f04331001` |
+| Push Result | **成功**，`cc2eeba..b145e6f`，fast-forward，未使用 force |
+| CI Result | **UNVERIFIED**（见下） |
+| Tag | `v0.3.0` → `b145e6f`，已推送 |
+| GitHub Release | **未创建**，需所有者操作（见下） |
+| Final Remote State | `PUSHED — READY FOR PUBLIC RELEASE（代码层），但仓库当前为 Private，尚未真正公开` |
+
+推送前完成的检查：`git status`（干净）、branch、remote、`git diff`、`git diff --staged`、提交历史、未跟踪敏感文件（无）、`.env` / API key / token / credential 扫描（无）、大型缓存与构建产物（`node_modules`、`dist` 均被 `.gitignore` 正确排除，无 >100KB 未跟踪文件）。
+
+推送后确认：`git fetch` 后本地 HEAD 与 `origin/main` **哈希完全一致**；远程 tag `v0.3.0` 指向同一 commit。
+
+### 两项无法在本环境验证 / 需所有者操作的事项
+
+**1. 仓库当前是 Private —— 「公开发布」尚未真正发生**
+
+`https://api.github.com/repos/liqinglan0512/MathLearn` 与 `https://github.com/liqinglan0512/MathLearn` 对匿名请求均返回 **HTTP 404**，说明仓库处于私有状态（push 之所以成功，是走了本机凭据管理器）。
+
+因此：陌生开发者目前看不到 README，也无法 clone；`v0.3.0` 是一个私有仓库里的 tag。**把仓库改为 Public 是所有者的决定，不应由自动化流程代劳**，本轮未做也无权做。代码本身已满足公开发布标准，但「公开」这一步尚未发生。
+
+**2. CI 结果未验证**
+
+本环境没有可用且已认证的 GitHub CLI / API 访问，仓库又是私有，因此**无法观察到 `push` 触发的 workflow 结果**。本报告不把本地通过写成 CI 通过。
+
+已做的等价验证：在删除 `node_modules` 后以 `npm ci` 重建，并按 `.github/workflows/ci.yml` 完全相同的顺序执行 typecheck → lint → test → check:latex → check:hygiene → check:contracts → build，`CHECK_EXIT=0`。
+
+**残留差异**：本机为 Node `v24.16.0`，CI 为 Node `22.x`。本环境无第二个 Node 版本，该差异未被覆盖。
+
+所有者应在此确认 CI：`https://github.com/liqinglan0512/MathLearn/actions`
+
+若该 CI run 为 FAIL，则按既定规则，最终状态应由 `READY` 改为 `NOT READY`，并且 `v0.3.0` 不应被用于正式发布。
