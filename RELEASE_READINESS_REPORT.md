@@ -317,3 +317,47 @@ run 34019230895 | commit 975b40b | Node 22.x | completed: success
 ```
 
 在描述更正前，GitHub 仓库首屏仍在对外传达与产品实际状态不一致的说明。
+
+
+---
+
+## 10. 生产部署记录（2026-09-06）
+
+**线上地址**：`http://8.130.33.10:8090/` — MathForge 0.3.1，构建 `index-CfIhtkcy.js`，commit `a062ff5`。
+
+### 部署过程中发现并修复的两个问题
+
+**D1 —— 脚本误报部署成功（P0，已修复）**
+
+首次部署输出 `MathForge deployed`，但外部验证发现 8090 仍在提供旧的 0.2 构建（`index-QLi8DAel.js`，Server 为容器的 nginx/1.21.5）。
+
+- *根因*：Docker 容器 `mathlearn`（`nginx:alpine`）已发布 `0.0.0.0:8090`，系统 nginx 无法绑定该端口。`nginx -t` 只校验配置语法、不校验端口可绑定性，reload 静默失败。而脚本的自检只断言「页面含 MathForge」——旧构建同样满足。
+- *修复*：预检在目标端口已被占用（Docker 发布或任何 LISTEN socket）时直接中止；验证改为比对 `index-<hash>.js`，断言线上提供的正是刚发布的那一份。已用真实的两个 hash 做正反测试。
+- *解决*：`docker stop mathlearn` 后 `systemctl reload nginx`，系统 nginx 接管 8090。容器 restart policy 为 `unless-stopped` 且已被手动停止，重启后不会自动抢回端口。
+
+**D2 —— 安全响应头声明了但从未生效（P1，已修复）**
+
+外部探测发现线上任何路径都没有 CSP、`X-Content-Type-Options`、`X-Frame-Options`、`Referrer-Policy`。
+
+- *根因*：nginx 的 `add_header` 仅在内层 block 自身不设置任何 `add_header` 时才继承外层。站点每个 location 都设了 `Cache-Control`，于是把 server 级的四个安全头全部丢弃。首页经由 `location = /index.html` 提供，因此实际一个安全头都没有。`/assets/` 另外因 `expires` 与 `add_header` 并存而返回两个互相竞争的 `Cache-Control`。
+- *修复*：安全头移入 `deploy/nginx-security-headers.conf`，安装为 `snippets/mathforge-headers.conf`，并在 server 块与每个设置 `add_header` 的 location 中 include；`/assets/`、`/content/` 去掉 `expires`，只保留单一 `Cache-Control`。
+- *防回归*：`deploy.sh` 新增部署后断言——同时探测 `/` 与哈希入口包，任一安全头缺失或 `Cache-Control` 出现多次即判定部署失败。
+
+### 线上验证结果
+
+| 项 | 结果 |
+| --- | --- |
+| 路由 `/`、`/principles`、`/viz`、`/problems`、`/tools`、`/papers` | 全部 200 |
+| SPA 深链接（直取 `/principles`，非首页 fallback） | 200，返回正确页面 |
+| `/login`、`/register` | 显示「本地身份原型未启用」，**无密码表单** |
+| `/internal/euclid` | 内部后台不可用 |
+| Euclid 语料 `/content/euclid/catalog.json` | 200（按需加载可达） |
+| 浏览器 console error | **0** |
+| KaTeX 公式渲染 | 正常 |
+| 交互实验（`/viz`） | 正常，实时计算 |
+| 移动端 375×812 | `scrollWidth == clientWidth == 375`，无横向溢出 |
+| **同机 Leo Tree** | 443 → 200，80 → 302，**未受影响** |
+
+### 待执行
+
+安全头修复（commit `424f516`）尚未部署到线上。需在服务器重跑一次 `deploy.sh`。在此之前，站点功能完全正常，但缺少上述四个安全响应头。
